@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>DRIP · a BitPillars game</title>
+<meta name="description" content="DRIP: a drop of light falling down a shaft. Swipe through the gaps. What falls, rises. A small pixel game by BitPillars.">
+<meta name="theme-color" content="#050611">
+<link rel="icon" href="../brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../brand/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Silkscreen&display=swap" rel="stylesheet">
+<style>
+  :root { --gold:#ffcf5a; --gold-dk:#c97a18; --aqua:#8fe9ff; --pink:#ff9ec7; --cream:#f4efe6; --ink:#0b0a1f; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; background:#050611; color:var(--cream); font-family:'Silkscreen',monospace;
+    touch-action:none; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; overscroll-behavior:none; }
+  canvas#c { position:fixed; inset:0; width:100%; height:100%; image-rendering:pixelated; display:block; }
+  .hidden { display:none !important; }
+  button { font-family:'Silkscreen',monospace; font-size:15px; font-weight:700; color:var(--cream); background:rgba(11,10,31,.7);
+    border:0; padding:12px 16px; cursor:pointer; letter-spacing:1px; box-shadow:inset 0 0 0 2px rgba(143,233,255,.55), 0 4px 0 rgba(0,0,0,.4); touch-action:manipulation; }
+  button:active { transform:translateY(3px); box-shadow:inset 0 0 0 2px rgba(143,233,255,.55), 0 1px 0 rgba(0,0,0,.4); }
+  button.big { background:var(--gold); color:var(--ink); font-size:18px; padding:15px 22px;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.45), 0 5px 0 var(--gold-dk), 0 0 26px rgba(255,207,90,.4); }
+  .jersey { font-family:'Jersey 10','Silkscreen',monospace; font-weight:400; }
+  .hud { position:fixed; z-index:3; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-start;
+    padding:calc(env(safe-area-inset-top) + 14px) 18px 0; pointer-events:none; }
+  #hDepth { font-size:34px; line-height:1; text-shadow:3px 3px 0 rgba(0,0,0,.6); }
+  #hZone { font-size:12px; color:var(--aqua); letter-spacing:2px; margin-bottom:4px; }
+  .hr { text-align:right; }
+  #hMotes { font-size:28px; line-height:1; text-shadow:3px 3px 0 rgba(0,0,0,.6); }
+  #hMotes b { color:var(--gold); font-weight:400; }
+  #hGlow { margin-top:8px; height:12px; }
+  #hGlow i { display:inline-block; width:9px; height:12px; margin-left:5px; background:var(--aqua); clip-path:polygon(50% 0,100% 62%,78% 92%,50% 100%,22% 92%,0 62%); box-shadow:0 0 6px var(--aqua); }
+  #hGlow i.off { opacity:.22; }
+  #bMenu { position:fixed; z-index:3; top:calc(env(safe-area-inset-top) + 70px); left:16px; font-size:11px; padding:8px 10px; }
+  #cap { position:fixed; z-index:3; left:16px; right:16px; bottom:calc(env(safe-area-inset-bottom) + 26px); text-align:center; font-size:13px; line-height:1.6;
+    color:#fff3d6; text-shadow:2px 2px 0 rgba(0,0,0,.8); pointer-events:none; transition:opacity .6s; }
+  .screen { position:fixed; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    padding:calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 20px); text-align:center; }
+  .dim { background:rgba(4,4,14,.72); backdrop-filter:blur(2px); }
+  #emblem { width:60px; height:min(170px,24vh); flex:none; }
+  #title h1 { margin:0; font-size:clamp(84px,17vw,160px); letter-spacing:10px; line-height:.85; color:var(--cream);
+    text-shadow:0 6px 0 #2c7f9a, 0 12px 0 rgba(0,0,0,.45), 0 0 40px rgba(143,233,255,.25); }
+  .tag { font-size:13px; color:#cfd8ff; letter-spacing:2px; margin:10px 0 16px; opacity:.85; }
+  .menu { display:flex; flex-direction:column; gap:12px; width:min(300px,86vw); }
+  .row { display:flex; gap:10px; } .row button { flex:1; }
+  .small { font-size:11px; opacity:.7; line-height:1.6; }
+  .by { position:fixed; bottom:calc(env(safe-area-inset-bottom) + 14px); left:0; right:0; font-size:11px; opacity:.75; }
+  .by a { color:var(--gold); text-decoration:none; }
+  .card { background:rgba(11,10,31,.92); padding:26px 24px; width:min(340px,88vw); box-shadow:inset 0 0 0 3px var(--aqua), 0 10px 0 rgba(0,0,0,.4);
+    display:flex; flex-direction:column; gap:12px; align-items:stretch; }
+  .card h2 { margin:0; font-size:44px; letter-spacing:3px; color:var(--aqua); line-height:1; }
+  #ending { pointer-events:none; } #ending > * { pointer-events:auto; }
+  #ending h2 { font-size:clamp(60px,12vw,110px); letter-spacing:8px; margin:0; color:var(--cream); line-height:.9; text-shadow:0 6px 0 #2c7f9a, 0 10px 0 rgba(0,0,0,.5); }
+  #ending p { font-size:13px; line-height:1.8; max-width:440px; margin:0; color:#e8e4f8; text-shadow:2px 2px 0 rgba(0,0,0,.8); }
+  #ending .fade { opacity:0; transition:opacity 2s; } #ending.on .fade { opacity:1; }
+  #toast { position:fixed; z-index:6; left:50%; top:30%; transform:translate(-50%,-50%); font-size:26px; letter-spacing:2px; color:var(--aqua);
+    text-shadow:3px 3px 0 rgba(0,0,0,.7); pointer-events:none; opacity:0; transition:opacity .25s; white-space:nowrap; }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud hidden" id="hud">
+  <div><div id="hZone">MOSS · DOWN</div><div id="hDepth" class="jersey">0 M</div></div>
+  <div class="hr"><div id="hMotes" class="jersey"><b>0</b></div><div id="hGlow"></div></div>
+</div>
+<button id="bMenu" class="hidden">MENU</button>
+<div id="cap"></div>
+<div id="toast" class="jersey"></div>
+
+<div class="screen" id="title">
+  <div id="emblem"></div>
+  <h1 class="jersey">DRIP</h1>
+  <p class="tag">a drop of light · one long fall</p>
+  <div class="menu">
+    <button class="big" id="tPlay">FALL</button>
+    <div class="row"><button id="tSfx">SFX ON</button><button id="tMusic">MUSIC ON</button></div>
+    <div class="small" id="tStats"></div>
+    <div class="small">SWIPE OR TAP LEFT / RIGHT · ARROWS ON A KEYBOARD</div>
+  </div>
+  <div class="by">a <a href="../index.html">BitPillars</a> game</div>
+</div>
+<div class="screen dim hidden" id="pause">
+  <div class="card">
+    <h2 class="jersey">PAUSED</h2>
+    <button class="big" id="pResume">RESUME</button>
+    <div class="row"><button id="pSfx">SFX</button><button id="pMusic">MUSIC</button></div>
+    <button id="pRestart">START OVER</button>
+    <button id="pTitle">TITLE</button>
+  </div>
+</div>
+<div class="screen hidden" id="ending">
+  <h2 class="jersey fade">DRIP</h2>
+  <p class="fade" id="eInfo"></p>
+  <div class="menu fade" style="margin-top:8px">
+    <div class="row"><button id="eAgain">FALL AGAIN</button><button id="eTitle">TITLE</button></div>
+    <button class="big" id="eBP">MORE BITPILLARS GAMES</button>
+  </div>
+</div>
+
+<script>
+// DRIP engine: a drop of light falling down a shaft, slipping between lanes through gaps in the gates.
+// At the bottom the world flips and you rise back up through the same shaft, every gate in reverse.
+// Pure logic, fixed 60 Hz steps, deterministic, shared by the browser and Node.
+(function (root) {
+  const LANES = 5, LW = 16, WALL = 8, SW = WALL * 2 + LANES * LW;   // shaft width in pixels
+  const SP = 56, N = 150, CP = 25;                                    // gate spacing, gates per half, checkpoint every N gates
+  const SWITCH = 6;                                                    // frames to slide one lane
+  const BIOMES = ['Moss', 'Crystal', 'Roots', 'Ember', 'Abyss'];
+  const START = 120;
+
+  function rng(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const laneX = l => WALL + l * LW + LW / 2;
+
+  // The shaft is the same for everyone. Each gate has at least one gap, and a "safe lane" path through all of
+  // them never needs more than two lane changes between neighbouring gates (one between close pairs).
+  function buildCourse(seed) {
+    const R = rng(seed || 20261109);
+    const down = []; let safe = 2, y = START;
+    for (let i = 0; i < N; i++) {
+      const biome = Math.min(4, Math.floor(i / (N / 5)));
+      const close = i > 10 && R() < 0.12 + biome * 0.03;                // a quick double: half spacing
+      const reach = close ? 1 : 2;
+      const next = Math.max(0, Math.min(LANES - 1, safe + Math.round((R() * 2 - 1) * reach)));
+      let gaps = 1 << next;
+      const extra = biome < 1 ? 2 : biome < 3 ? 1 : R() < 0.5 ? 1 : 0;   // deeper gates have fewer gaps
+      for (let k = 0; k < extra; k++) gaps |= 1 << Math.floor(R() * LANES);
+      if (i < 4) gaps |= 1 << safe;
+      y += i === 0 ? 0 : close ? SP / 2 : SP;
+      down.push({ i, y, gaps, safe: next, biome, cp: i % CP === 0, close });
+      safe = next;
+    }
+    const bottom = y + 140;                                             // the pool
+    // motes: one between most gates, sometimes off the safe lane (a small risk for a small reward)
+    const motes = (gates, salt) => { const R2 = rng(salt), out = [];
+      for (let i = 0; i + 1 < gates.length; i++) { if (R2() < 0.25) continue; const a = gates[i], b = gates[i + 1];
+        const lane = R2() < 0.55 ? b.safe : Math.max(0, Math.min(LANES - 1, b.safe + (R2() < 0.5 ? -1 : 1)));
+        out.push({ y: (a.y + b.y) / 2, lane }); }
+      return out; };
+    return { down, bottom, motesDown: motes(down, 77), motesUp: motes(down.slice().reverse(), 91) };
+  }
+
+  // speed rises through each half
+  function speed(st, C) {
+    const p = st.phase === 'down' ? st.y / C.bottom : st.phase === 'up' ? 1 - st.y / C.bottom : 0;
+    return (st.phase === 'up' ? 78 : 70) + 52 * Math.min(1, Math.max(0, p) * 1.15);
+  }
+
+  function newRun(C) {
+    const st = { phase: 'down', y: 40, lane: 2, target: 2, x: laneX(2), glow: 3, inv: 0, hits: 0, fades: 0, next: 0, cp: 0,
+      got: new Set(), frame: 0, flipT: 0, won: false, moved: 0 };
+    return st;
+  }
+  // gates in the order you meet them; in the up phase the shaft is the same, walked backwards
+  const gateList = (C, st) => st.phase === 'up' ? C.down.slice().reverse() : C.down;
+  const motesOf = (C, st) => st.phase === 'up' ? C.motesUp : C.motesDown;
+
+  // input: -1 left, +1 right, 0 nothing (a press, not a hold)
+  function step(C, st, input) {
+    const ev = [];
+    if (st.won) return ev;
+    st.frame++;
+    if (input && st.phase !== 'flip') {
+      const t = Math.max(0, Math.min(LANES - 1, st.target + input));
+      if (t !== st.target) { st.target = t; st.moved++; ev.push({ type: 'move', dir: input }); }
+    }
+    // slide toward the target lane
+    const tx = laneX(st.target), dx = tx - st.x, sp = LW / SWITCH;
+    st.x = Math.abs(dx) <= sp ? tx : st.x + Math.sign(dx) * sp;
+    st.lane = Math.round((st.x - WALL - LW / 2) / LW);
+    if (st.inv > 0) st.inv--;
+
+    if (st.phase === 'flip') {
+      if (++st.flipT >= 150) { st.phase = 'up'; st.next = 0; st.cp = 0; ev.push({ type: 'rise' }); }
+      return ev;
+    }
+    const prevY = st.y, dy = speed(st, C) / 60, dir = st.phase === 'up' ? -1 : 1;
+    st.y += dy * dir;
+    const gates = gateList(C, st);
+    // gates: judged the moment the drop's centre crosses the gate line
+    while (st.next < gates.length) {
+      const g = gates[st.next], gy = g.y;
+      const crossed = dir > 0 ? prevY < gy && st.y >= gy : prevY > gy && st.y <= gy;
+      if (!crossed) break;
+      if (g.cp) { st.cp = st.next; ev.push({ type: 'checkpoint', i: st.next }); }
+      let hit = false;
+      for (let l = 0; l < LANES; l++) {
+        if (g.gaps & (1 << l)) continue;
+        const a = WALL + l * LW, b = a + LW;
+        if (st.x + 2.5 > a + 0.5 && st.x - 2.5 < b - 0.5) { hit = true; break; }
+      }
+      st.next++;
+      if (hit) {
+        if (st.inv > 0) { ev.push({ type: 'graze', i: st.next - 1 }); continue; }
+        st.hits++; st.glow--; st.inv = 50; ev.push({ type: 'hit', i: st.next - 1, glow: st.glow });
+        if (st.glow <= 0) { fade(C, st, ev); return ev; }
+      } else ev.push({ type: 'pass', i: st.next - 1, close: g.close });
+    }
+    // motes
+    const ms = motesOf(C, st), tag = st.phase === 'up' ? 'u' : 'd';
+    for (let k = 0; k < ms.length; k++) {
+      const m = ms[k], id = tag + k;
+      if (st.got.has(id) || Math.abs(m.y - st.y) > 6) continue;
+      if (Math.abs(laneX(m.lane) - st.x) < 7) { st.got.add(id); ev.push({ type: 'mote', id, n: st.got.size }); }
+    }
+    // bottom and top
+    if (st.phase === 'down' && st.y >= C.bottom) { st.y = C.bottom; st.phase = 'flip'; st.flipT = 0; ev.push({ type: 'flip' }); }
+    else if (st.phase === 'up' && st.y <= -30) { st.won = true; ev.push({ type: 'win' }); }
+    return ev;
+  }
+  function fade(C, st, ev) {
+    st.fades++;
+    const gates = gateList(C, st), g = gates[st.cp];
+    st.next = st.cp; st.y = g.y - (st.phase === 'up' ? -70 : 70); st.glow = 3; st.inv = 90;
+    st.target = g.safe; st.x = laneX(g.safe); st.lane = g.safe;
+    ev.push({ type: 'fade', cp: st.cp });
+  }
+  const totalMotes = C => C.motesDown.length + C.motesUp.length;
+
+  const api = { LANES, LW, WALL, SW, SP, N, CP, BIOMES, buildCourse, newRun, step, speed, laneX, gateList, motesOf, totalMotes };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.DR = api;
+})(this);
+
+</script>
+<script>
+(function () {
+'use strict';
+const $ = id => document.getElementById(id);
+const { LANES, LW, WALL, SW, BIOMES } = DR;
+const C = DR.buildCourse();
+
+const SK = 'drip-v1';
+let save = { finished: false, bestTime: 0, bestMotes: 0, runs: 0, sfx: true, music: true };
+try { const s = JSON.parse(localStorage.getItem(SK)); if (s) save = Object.assign(save, s); } catch (e) {}
+const persist = () => { try { localStorage.setItem(SK, JSON.stringify(save)); } catch (e) {} };
+
+// ---------------- audio ----------------
+let AC = null, master, sfxG, musG, noiseBuf, musTimer = null, musNext = 0, musStep = 0, rising = false;
+function audio() {
+  if (AC) { if (AC.state === 'suspended') AC.resume().catch(() => {}); return; }
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = 0.5; master.connect(AC.destination);
+    sfxG = AC.createGain(); sfxG.gain.value = save.sfx ? 1 : 0; sfxG.connect(master);
+    musG = AC.createGain(); musG.gain.value = save.music ? 0.2 : 0; musG.connect(master);
+    noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    startMusic();
+  } catch (e) { AC = null; }
+}
+function tone(f, dur, type, vol, slide, when, dest) {
+  if (!AC) return;
+  const t = AC.currentTime + (when || 0), o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.1, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(dest || sfxG); o.start(t); o.stop(t + dur + 0.03);
+}
+function noise(dur, vol, freq) {
+  if (!AC) return;
+  const t = AC.currentTime, s = AC.createBufferSource(); s.buffer = noiseBuf;
+  const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq || 1000;
+  const g = AC.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(sfxG); s.start(t); s.stop(t + dur + 0.02);
+}
+const PENTA = [523, 587, 659, 784, 880];
+const SFX = {
+  move(d) { tone(d > 0 ? 700 : 600, 0.05, 'sine', 0.03, d > 0 ? 900 : 480); },
+  pass(lane, close) { tone(PENTA[lane] * (rising ? 1.5 : 1), close ? 0.1 : 0.16, 'triangle', 0.035); },
+  mote(n) { tone(1319 + (n % 5) * 110, 0.2, 'sine', 0.06); tone(2637, 0.12, 'sine', 0.02, null, 0.03); },
+  hit() { noise(0.25, 0.2, 700); tone(220, 0.25, 'square', 0.05, 90); },
+  fade() { tone(660, 0.8, 'sine', 0.08, 165); },
+  check() { [784, 988, 1175].forEach((f, i) => tone(f, 0.25, 'triangle', 0.04, null, i * 0.05)); },
+  splash() { noise(0.6, 0.25, 600); [262, 330, 392].forEach((f, i) => tone(f, 1.2, 'sine', 0.06, f * 2, 0.4 + i * 0.12)); },
+  rise() { [392, 523, 659, 784, 1047].forEach((f, i) => tone(f, 0.6, 'triangle', 0.05, null, i * 0.08)); },
+  win() { [523, 659, 784, 1047, 1319, 1568, 2093].forEach((f, i) => tone(f, 1.4, 'sine', 0.06, null, i * 0.15)); },
+  click() { tone(880, 0.04, 'square', 0.03); },
+};
+function startMusic() {
+  if (!AC || musTimer) return;
+  musNext = AC.currentTime + 0.1;
+  const down = [[146.8, 220, 293.7, 349.2], [130.8, 196, 261.6, 329.6], [116.5, 174.6, 233.1, 293.7], [130.8, 196, 261.6, 311.1]];
+  const up = [[146.8, 220, 293.7, 370], [164.8, 246.9, 329.6, 415.3], [196, 293.7, 392, 493.9], [220, 329.6, 440, 554.4]];
+  musTimer = setInterval(() => {
+    if (!AC) return;
+    while (musNext < AC.currentTime + 0.25) {
+      const t = musNext - AC.currentTime, prog = rising ? up : down, bar = Math.floor(musStep / 8) % 4, beat = musStep % 8, ch = prog[bar];
+      if (beat === 0) tone(ch[0], 2.2, 'sine', 0.22, null, t, musG);
+      if (beat % 2 === 0) tone(ch[1 + (beat / 2) % 3] * 2, 0.5, 'triangle', 0.035, null, t, musG);
+      if (Math.random() < 0.18) tone(ch[3] * 4 * (Math.random() < 0.5 ? 1 : 1.5), 0.25, 'sine', 0.025, ch[3] * 2, t + 0.05, musG);   // drips
+      musNext += 60 / 92 / 2; musStep++;
+    }
+  }, 70);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) { if (G.mode === 'play') openPause(); if (AC) AC.suspend().catch(() => {}); } else if (AC) AC.resume().catch(() => {}); });
+
+// ---------------- canvas ----------------
+const cv = $('c'), ctx = cv.getContext('2d');
+const lo = document.createElement('canvas'), g = lo.getContext('2d');
+let S = 3, DPR = 1, stars = [];
+const G = { mode: 'title', st: null, acc: 0, prevY: 0, prevX: 0, particles: [], shake: 0, flash: 0, flashCol: '#fff', anchor: 0.32, winAt: 0, time: 0, ripples: [] };
+function fit() {
+  DPR = Math.min(window.devicePixelRatio || 1, 3);
+  cv.width = Math.round(innerWidth * DPR); cv.height = Math.round(innerHeight * DPR);
+  S = Math.max(2, Math.floor(Math.min(cv.width / (SW + 40), cv.height / 210)));
+  lo.width = Math.ceil(cv.width / S); lo.height = Math.ceil(cv.height / S);
+  stars = Array.from({ length: Math.round(lo.width * lo.height / 500) }, () => ({ x: Math.random() * lo.width, y: Math.random() * 400 - 400,
+    c: ['#cfd8ff', '#8fe9ff', '#ffcf5a', '#ff9ec7', '#ffffff'][Math.floor(Math.random() * 5)], p: Math.random() * 6.28, s: 0.4 + Math.random() * 1.2, b: 0.2 + Math.random() * 0.6 }));
+}
+addEventListener('resize', fit);
+function hsh(x, y) { let h = (x | 0) * 374761393 + (y | 0) * 668265263; h = (h ^ (h >>> 13)) * 1274126177; return (h ^ (h >>> 16)) >>> 0; }
+
+// biome palettes: rock dark, rock mid, rock light, gate, gate edge, accent
+const PAL = [
+  ['#13261c', '#21402d', '#36603f', '#3f7a4c', '#9be38b', '#7fe08a'],
+  ['#0f2230', '#1b3a52', '#2a5a7a', '#2f7fa8', '#9fe8ff', '#8fe9ff'],
+  ['#2a1c12', '#45301d', '#6a4a2a', '#8a5a2a', '#ffcf8a', '#ffcf5a'],
+  ['#2a1012', '#4a1c1e', '#73302a', '#a8402e', '#ffb08a', '#ff7a5a'],
+  ['#140f2a', '#221a46', '#352a6a', '#4a3a9a', '#c9b8ff', '#b89cff'],
+];
+function biomeAt(y) { const i = Math.max(0, Math.min(C.down.length - 1, Math.floor((y - 120) / DR.SP))); return C.down[i] ? C.down[i].biome : 0; }
+
+// ---------------- run ----------------
+function startRun() {
+  G.st = DR.newRun(C); G.acc = 0; G.prevY = G.st.y; G.prevX = G.st.x; G.particles = []; G.anchor = 0.32; G.time = 0; G.winAt = 0; G.ripples = [];
+  rising = false; G.mode = 'play'; show(null); hud();
+  cap('Swipe or tap left and right. Slip through the gaps.', 4000);
+}
+let capT = 0;
+function cap(t, ms) { $('cap').textContent = t; $('cap').style.opacity = 1; clearTimeout(capT); if (ms) capT = setTimeout(() => $('cap').style.opacity = 0, ms); }
+function hud() {
+  const st = G.st, b = biomeAt(st.y), depth = Math.max(0, Math.round(st.y / 8));
+  $('hZone').textContent = BIOMES[b].toUpperCase() + ' · ' + (st.phase === 'down' ? 'DOWN' : st.phase === 'flip' ? 'THE BOTTOM' : 'UP');
+  $('hDepth').textContent = depth + ' M';
+  $('hMotes').innerHTML = '<b>' + st.got.size + '</b>';
+  $('hGlow').innerHTML = [0, 1, 2].map(i => '<i' + (i < st.glow ? '' : ' class="off"') + '></i>').join('');
+}
+
+// ---------------- input ----------------
+let pending = 0;
+function press(d) { audio(); if (G.mode === 'play' && G.st && !G.st.won) pending = d; }
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'a') { e.preventDefault(); press(-1); }
+  else if (k === 'arrowright' || k === 'd') { e.preventDefault(); press(1); }
+  else if (k === 'escape' || k === 'p') { if (G.mode === 'play') openPause(); else if (G.mode === 'pause') resume(); }
+});
+let sw = null;
+cv.addEventListener('pointerdown', e => { audio(); sw = { x: e.clientX, y: e.clientY, used: false, t: performance.now() }; });
+addEventListener('pointermove', e => {
+  if (!sw || sw.used) return; const dx = e.clientX - sw.x;
+  if (Math.abs(dx) > 22) { press(dx > 0 ? 1 : -1); sw = { x: e.clientX, y: e.clientY, used: false, t: performance.now(), swiped: true }; }
+});
+addEventListener('pointerup', e => { if (sw && !sw.swiped && performance.now() - sw.t < 350) press(e.clientX < innerWidth / 2 ? -1 : 1); sw = null; });
+addEventListener('pointercancel', () => sw = null);
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+// ---------------- loop ----------------
+function burst(x, y, n, cols, spd, life, grav) {
+  for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, v = (0.3 + Math.random()) * spd;
+    G.particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: life * (0.5 + Math.random() * 0.7), max: life, c: cols[i % cols.length], g: grav || 0 }); }
+}
+function onEvents(ev) {
+  const st = G.st;
+  for (const e of ev) {
+    if (e.type === 'move') SFX.move(e.dir);
+    else if (e.type === 'pass') SFX.pass(st.lane, e.close);
+    else if (e.type === 'mote') { SFX.mote(e.n); burst(st.x, st.y, 10, ['#ffcf5a', '#fff4c9'], 0.05, 400); }
+    else if (e.type === 'hit') { SFX.hit(); G.shake = 4; G.flash = 1; G.flashCol = '#ff7a9a'; burst(st.x, st.y, 14, ['#8fe9ff', '#ffffff'], 0.07, 450); }
+    else if (e.type === 'fade') { SFX.fade(); toast('BACK TO THE LAST POOL'); G.prevY = st.y; G.prevX = st.x; G.flash = 1; G.flashCol = '#8fe9ff'; }
+    else if (e.type === 'checkpoint' && e.i > 0) { SFX.check(); }
+    else if (e.type === 'flip') {
+      SFX.splash(); G.shake = 5; G.flash = 1; G.flashCol = '#ffffff';
+      for (let i = 0; i < 40; i++) G.particles.push({ x: st.x + (Math.random() - 0.5) * 6, y: C.bottom + 2, vx: (Math.random() - 0.5) * 0.12, vy: -0.05 - Math.random() * 0.12, life: 900, max: 900, c: Math.random() < 0.5 ? '#8fe9ff' : '#ffffff', g: 0.00025 });
+      G.ripples.push({ x: st.x, t: performance.now() });
+      cap('The bottom was only halfway.', 0);
+    } else if (e.type === 'rise') { rising = true; SFX.rise(); G.flash = 1; G.flashCol = '#ffcf5a'; cap('Now fall up.', 3500); }
+    else if (e.type === 'win') { SFX.win(); G.winAt = performance.now(); }
+  }
+  if (ev.length) hud();
+}
+const STEP = 1000 / 60;
+let last = performance.now();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (G.mode === 'play' && G.st && !G.st.won) {
+    const sp = window.__speed || 1;                     // test hook: run the simulation faster
+    G.acc += dt * 1000 * sp; G.time += dt * sp;
+    let n = 0;
+    while (G.acc >= STEP && n++ < 4 * sp) {
+      G.acc -= STEP; G.prevY = G.st.y; G.prevX = G.st.x;
+      const inp = window.__auto ? window.__auto() : pending; pending = 0;
+      onEvents(DR.step(C, G.st, inp));
+      if (G.st.won) break;
+    }
+  }
+  if (G.mode === 'play' && G.st && G.st.won && G.winAt && now - G.winAt > 4200) finish();
+  render(now, dt);
+}
+
+// ---------------- render ----------------
+function render(now, dt) {
+  const Wl = lo.width, Hl = lo.height;
+  g.globalAlpha = 1; g.fillStyle = '#050611'; g.fillRect(0, 0, Wl, Hl);
+  if (G.mode === 'title' || !G.st) { renderTitle(now); blit(); return; }
+  const st = G.st;
+  // camera: the drop sits high on the way down and low on the way up, so you always see what's coming
+  const want = st.phase === 'down' ? 0.32 : st.phase === 'flip' ? (st.flipT > 60 ? 0.68 : 0.32) : 0.68;
+  G.anchor += (want - G.anchor) * Math.min(1, dt * 1.6);
+  const a = Math.min(1, G.acc / STEP), dy = G.prevY + (st.y - G.prevY) * a, dx = G.prevX + (st.x - G.prevX) * a;
+  let wy = st.won ? st.y - (performance.now() - G.winAt) * 0.03 : dy;
+  G.shake = Math.max(0, G.shake - dt * 12);
+  const camY = Math.round(wy - Hl * G.anchor + (Math.random() - 0.5) * G.shake);
+  const X0 = Math.floor((Wl - SW) / 2) + Math.round((Math.random() - 0.5) * G.shake);
+  // sky at the top of the shaft
+  if (camY < 0) {
+    for (const s of stars) { const y = s.y - camY * 0.6; if (y < 0 || y > -camY + 4) continue;
+      g.globalAlpha = s.b * (0.55 + 0.45 * Math.sin(now / 1000 * s.s + s.p)); g.fillStyle = s.c; g.fillRect(s.x | 0, y | 0, 1, 1); }
+    g.globalAlpha = 1;
+  }
+  // rock on both sides, and the shaft's inside
+  for (let y = 0; y < Hl; y++) {
+    const wyy = camY + y; if (wyy < 0) continue;
+    const b = biomeAt(wyy), P = PAL[b];
+    const deep = Math.min(1, wyy / C.bottom);
+    g.fillStyle = P[0]; g.fillRect(0, y, X0 + WALL, 1); g.fillRect(X0 + SW - WALL, y, Wl - (X0 + SW - WALL), 1);
+    // inner shaft: darker with depth
+    g.fillStyle = `rgb(${8 + (1 - deep) * 10 | 0},${10 + (1 - deep) * 12 | 0},${22 + (1 - deep) * 14 | 0})`; g.fillRect(X0 + WALL, y, SW - WALL * 2, 1);
+    // rock texture
+    for (let x = 0; x < Wl; x += 3) {
+      if (x >= X0 + WALL - 1 && x < X0 + SW - WALL + 1) continue;
+      const h = hsh(Math.floor((x - X0) / 6), Math.floor(wyy / 4)); if (h % 4) continue;
+      g.fillStyle = h % 3 ? P[1] : P[2]; g.fillRect(x, y, 3, 1);
+    }
+    // the wall lip next to the shaft
+    g.fillStyle = P[2]; g.fillRect(X0 + WALL - 1, y, 1, 1); g.fillRect(X0 + SW - WALL, y, 1, 1);
+    // biome decor on the walls
+    const h = hsh(wyy, 17);
+    if (h % 11 === 0) {
+      g.fillStyle = P[5]; const side = h & 1 ? X0 + WALL : X0 + SW - WALL - 1, dir = h & 1 ? 1 : -1;
+      if (b === 0) { g.fillRect(side, y, dir, 1); g.fillRect(side + dir, y - 1, dir, 1); }                         // moss
+      else if (b === 1) { g.fillRect(side, y - 2, dir * 2, 1); g.fillRect(side, y - 1, dir * 3, 1); g.fillRect(side, y, dir * 2, 1); } // crystal
+      else if (b === 2) { g.fillStyle = P[3]; g.fillRect(side, y, dir * 4, 1); g.fillRect(side + dir * 3, y + 1, dir, 2); }  // roots
+      else if (b === 3) { if (Math.floor(now / 200 + h) % 3) { g.fillRect(side + dir, y, 1, 1); } }                      // embers
+      else { g.fillStyle = Math.floor(now / 400 + h) % 7 ? P[5] : '#ffffff'; g.fillRect(side + dir * 2, y, 1, 1); }      // abyss eyes
+    }
+  }
+  // the rock fades into the dark away from the shaft
+  const fadeW = Math.max(30, X0);
+  let gr0 = g.createLinearGradient(X0 + WALL, 0, X0 + WALL - fadeW, 0); gr0.addColorStop(0, 'rgba(5,6,17,0)'); gr0.addColorStop(1, 'rgba(5,6,17,0.92)');
+  g.fillStyle = gr0; g.fillRect(0, Math.max(0, -camY), X0 + WALL, Hl);
+  gr0 = g.createLinearGradient(X0 + SW - WALL, 0, X0 + SW - WALL + fadeW, 0); gr0.addColorStop(0, 'rgba(5,6,17,0)'); gr0.addColorStop(1, 'rgba(5,6,17,0.92)');
+  g.fillStyle = gr0; g.fillRect(X0 + SW - WALL, Math.max(0, -camY), Wl - X0 - SW + WALL, Hl);
+  // light from above, fading with depth
+  const top = -camY; if (top > -200) { const gr = g.createLinearGradient(0, top, 0, top + 220); gr.addColorStop(0, 'rgba(255,240,200,0.18)'); gr.addColorStop(1, 'rgba(255,240,200,0)'); g.fillStyle = gr; g.fillRect(X0 + WALL, Math.max(0, top), SW - WALL * 2, 220); }
+  // the pool at the bottom
+  const py = C.bottom + 4 - camY;
+  if (py < Hl + 4) {
+    g.fillStyle = '#123a5a'; g.fillRect(X0 + WALL, py, SW - WALL * 2, Hl - py + 4);
+    g.fillStyle = '#8fe9ff'; for (let x = X0 + WALL; x < X0 + SW - WALL; x++) if ((x + Math.floor(now / 160)) % 6 < 3) g.fillRect(x, py, 1, 1);
+    for (const r of G.ripples) { const k = (now - r.t) / 1400; if (k > 1) continue; const w = Math.round(k * 34);
+      g.globalAlpha = 1 - k; g.fillStyle = '#ffffff'; g.fillRect(X0 + Math.round(r.x) - w, py, 3, 1); g.fillRect(X0 + Math.round(r.x) + w - 2, py, 3, 1); g.globalAlpha = 1; }
+    g.fillStyle = '#c9b8ff'; const f = Math.floor(now / 500) % 2; g.fillRect(X0 + SW / 2 - 18, py + 8 + f, 1, 1); g.fillRect(X0 + SW / 2 + 14, py + 11 - f, 1, 1);
+  }
+  // gates
+  const gates = C.down;
+  for (const gt of gates) {
+    const y = Math.round(gt.y - camY); if (y < -4 || y > Hl + 4) continue;
+    const P = PAL[gt.biome], passed = st.phase === 'down' ? gt.y < st.y : st.phase === 'up' ? gt.y > st.y : true;
+    for (let l = 0; l < LANES; l++) {
+      const x = X0 + WALL + l * LW;
+      if (gt.gaps & (1 << l)) { if (!passed && (hsh(gt.i, l) % 3 === 0)) { g.fillStyle = P[5]; g.globalAlpha = 0.25; g.fillRect(x + 7, y, 2, 1); g.globalAlpha = 1; } continue; }
+      g.fillStyle = P[3]; g.fillRect(x, y - 2, LW, 4);
+      g.fillStyle = P[4]; g.fillRect(x, st.phase === 'up' || (st.phase === 'flip' && G.anchor > 0.5) ? y + 1 : y - 2, LW, 1);
+      g.fillStyle = P[1]; g.fillRect(x + (hsh(gt.i, l) % 12), y - 1, 2, 1);
+      // caps where a bar meets a gap
+      if (l > 0 && (gt.gaps & (1 << (l - 1)))) { g.fillStyle = P[4]; g.fillRect(x, y - 2, 1, 4); }
+      if (l < LANES - 1 && (gt.gaps & (1 << (l + 1)))) { g.fillStyle = P[4]; g.fillRect(x + LW - 1, y - 2, 1, 4); }
+    }
+    if (gt.cp && gt.i > 0) { g.fillStyle = '#ffcf5a'; g.globalAlpha = 0.6; g.fillRect(X0 + 2, y, 3, 1); g.fillRect(X0 + SW - 5, y, 3, 1); g.globalAlpha = 1; }
+  }
+  // motes of the current half
+  if (st.phase !== 'flip') {
+    const ms = DR.motesOf(C, st), tag = st.phase === 'up' ? 'u' : 'd';
+    ms.forEach((m, k) => { if (st.got.has(tag + k)) return; const y = Math.round(m.y - camY); if (y < -4 || y > Hl + 4) return;
+      const x = X0 + DR.laneX(m.lane), p = Math.floor(now / 140 + k) % 4;
+      g.globalAlpha = 0.3; g.fillStyle = '#ffcf5a'; g.fillRect(x - 2, y - 2, 5, 5); g.globalAlpha = 1;
+      g.fillStyle = '#ffcf5a'; g.fillRect(x - 1, y, 3, 1); g.fillRect(x, y - 1, 1, 3); g.fillStyle = p ? '#fff4c9' : '#ffffff'; g.fillRect(x, y, 1, 1); });
+  }
+  // the drop
+  const up = st.phase === 'up' || (st.phase === 'flip' && st.flipT > 75) || st.won;
+  const blink = st.inv > 0 && Math.floor(now / 80) % 2;
+  if (!blink) drawDrop(X0 + Math.round(dx), Math.round(wy - camY), up, now, st.glow);
+  // particles
+  for (const p of G.particles) { p.vy += p.g * dt * 1000; p.x += p.vx * dt * 1000; p.y += p.vy * dt * 1000; p.life -= dt * 1000; }
+  G.particles = G.particles.filter(p => p.life > 0);
+  for (const p of G.particles) { g.globalAlpha = Math.min(1, p.life / p.max * 1.4); g.fillStyle = p.c; g.fillRect(Math.round(X0 + p.x), Math.round(p.y - camY), 1, 1); }
+  g.globalAlpha = 1;
+  // progress rail on the right
+  const railX = X0 + SW + 6, railH = Math.min(Hl - 40, 160), railY = Math.floor((Hl - railH) / 2);
+  if (railX + 3 < Wl) {
+    g.fillStyle = 'rgba(255,255,255,0.12)'; g.fillRect(railX, railY, 1, railH);
+    const p = Math.max(0, Math.min(1, st.y / C.bottom)); g.fillStyle = st.phase === 'up' ? '#ffcf5a' : '#8fe9ff'; g.fillRect(railX - 1, railY + Math.round(p * railH) - 1, 3, 3);
+  }
+  G.flash = Math.max(0, G.flash - dt * 4);
+  if (G.flash > 0) { g.globalAlpha = G.flash * 0.18; g.fillStyle = G.flashCol; g.fillRect(0, 0, Wl, Hl); g.globalAlpha = 1; }
+  blit();
+}
+function drawDrop(x, y, up, now, glow) {
+  const s = up ? -1 : 1, p = 0.5 + 0.5 * Math.sin(now / 200);
+  g.globalAlpha = 0.18 + 0.1 * p + glow * 0.04; g.fillStyle = '#8fe9ff'; g.fillRect(x - 4, y - 4, 9, 9); g.fillRect(x - 2, y - 6, 5, 13); g.globalAlpha = 1;
+  // a teardrop: round end leads the fall
+  const rows = [[0, 1], [0, 1], [-1, 3], [-2, 5], [-2, 5], [-2, 5], [-1, 3]];
+  rows.forEach(([o, w], i) => { const yy = y + s * (i - 4); g.fillStyle = i < 2 ? '#d8fbff' : '#8fe9ff'; g.fillRect(x + o, yy, w, 1); });
+  g.fillStyle = '#ffffff'; g.fillRect(x - 1, y + s * -1, 1, 1);
+  g.fillStyle = '#2c7f9a'; g.fillRect(x + 1, y + s * 1, 1, 1);
+  // trail
+  for (let k = 1; k < 5; k++) { g.globalAlpha = 0.35 - k * 0.07; g.fillStyle = '#8fe9ff'; g.fillRect(x, y - s * (4 + k * 2), 1, 1); }
+  g.globalAlpha = 1;
+}
+function renderTitle(now) {
+  const Wl = lo.width, Hl = lo.height;
+  for (const s of stars) { g.globalAlpha = s.b * (0.55 + 0.45 * Math.sin(now / 1000 * s.s + s.p)); g.fillStyle = s.c; g.fillRect(s.x | 0, (s.y + 400) % Hl | 0, 1, 1); }
+  g.globalAlpha = 1;
+  const r = $('emblem').getBoundingClientRect();
+  const cx = Math.round((r.left + r.width / 2) * DPR / S), top = Math.round(r.top * DPR / S), h = Math.round(r.height * DPR / S);
+  const k = (now % 2200) / 2200, y = top + Math.round(k * k * (h - 4));
+  drawDrop(cx, y, false, now, 3);
+  if (k > 0.9) { const w = Math.round((k - 0.9) * 120); g.fillStyle = '#8fe9ff'; g.fillRect(cx - w, top + h, 2, 1); g.fillRect(cx + w - 1, top + h, 2, 1); }
+  g.fillStyle = 'rgba(143,233,255,0.3)'; g.fillRect(cx - 14, top + h + 1, 29, 1);
+}
+function blit() { ctx.imageSmoothingEnabled = false; ctx.drawImage(lo, 0, 0, lo.width * S, lo.height * S); }
+
+// ---------------- screens ----------------
+function show(id) {
+  for (const s of ['title', 'pause', 'ending']) $(s).classList.toggle('hidden', s !== id);
+  const playing = G.mode === 'play' || G.mode === 'pause';
+  $('hud').classList.toggle('hidden', !playing); $('bMenu').classList.toggle('hidden', !playing || id !== null); $('cap').classList.toggle('hidden', !playing || id !== null);
+  if (id === 'title') refreshTitle();
+}
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 1100); }
+function fmt(s) { const m = Math.floor(s / 60), r = Math.floor(s % 60); return m + ':' + String(r).padStart(2, '0'); }
+function refreshTitle() {
+  for (const p of ['t', 'p']) { $(p + 'Sfx').textContent = 'SFX ' + (save.sfx ? 'ON' : 'OFF'); $(p + 'Music').textContent = 'MUSIC ' + (save.music ? 'ON' : 'OFF'); }
+  $('tStats').textContent = save.finished ? `BEST ${fmt(save.bestTime)} · ${save.bestMotes} / ${DR.totalMotes(C)} MOTES` : 'ABOUT THREE MINUTES, ONE WAY DOWN';
+}
+function openPause() { if (G.mode !== 'play' || G.st.won) return; G.mode = 'pause'; refreshTitle(); show('pause'); }
+function resume() { G.mode = 'play'; show(null); last = performance.now(); }
+function finish() {
+  const st = G.st; save.runs++;
+  const first = !save.finished; save.finished = true;
+  if (!save.bestTime || G.time < save.bestTime) save.bestTime = G.time;
+  if (st.got.size > save.bestMotes) save.bestMotes = st.got.size; persist();
+  $('eInfo').innerHTML = `What falls, rises.<br><br>TIME ${fmt(G.time)} · MOTES ${st.got.size} / ${DR.totalMotes(C)}<br>HITS ${st.hits}${st.fades ? ' · POOLS ' + st.fades : ''}${first ? '' : '<br>BEST ' + fmt(save.bestTime)}`;
+  G.mode = 'ending'; show('ending'); setTimeout(() => $('ending').classList.add('on'), 50);
+}
+const tap = (id, fn) => $(id).addEventListener('click', e => { audio(); SFX.click(); fn(e); });
+tap('tPlay', startRun);
+tap('tSfx', () => { save.sfx = !save.sfx; if (sfxG) sfxG.gain.value = save.sfx ? 1 : 0; persist(); refreshTitle(); });
+tap('tMusic', () => { save.music = !save.music; if (musG) musG.gain.value = save.music ? 0.2 : 0; persist(); refreshTitle(); });
+tap('pSfx', () => $('tSfx').click());
+tap('pMusic', () => $('tMusic').click());
+tap('bMenu', openPause);
+tap('pResume', resume);
+tap('pRestart', startRun);
+tap('pTitle', () => { G.mode = 'title'; G.st = null; rising = false; show('title'); });
+tap('eAgain', () => { $('ending').classList.remove('on'); startRun(); });
+tap('eTitle', () => { $('ending').classList.remove('on'); G.mode = 'title'; G.st = null; rising = false; show('title'); });
+tap('eBP', () => { location.href = '../index.html'; });
+
+fit(); show('title'); requestAnimationFrame(frame);
+window.__G = G; window.__DR = DR; window.__C = C;
+})();
+</script>
+</body>
+</html>

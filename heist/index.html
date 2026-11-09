@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>ONE MINUTE HEIST · a BitPillars game</title>
+<meta name="description" content="ONE MINUTE HEIST: one room, one minute, one gem. Every minute the room resets and you keep only what you learned. A small pixel game by BitPillars.">
+<meta name="theme-color" content="#07060f">
+<link rel="icon" href="../brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../brand/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Silkscreen&display=swap" rel="stylesheet">
+<style>
+  :root { --gold:#ffcf5a; --gold-dk:#c97a18; --red:#ff5a6e; --violet:#b89cff; --cream:#f4efe6; --ink:#0b0a1f; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; background:#07060f; color:var(--cream); font-family:'Silkscreen',monospace;
+    touch-action:none; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; overscroll-behavior:none; }
+  canvas#c { position:fixed; inset:0; width:100%; height:100%; image-rendering:pixelated; display:block; }
+  .hidden { display:none !important; }
+  button { font-family:'Silkscreen',monospace; font-size:15px; font-weight:700; color:var(--cream); background:rgba(11,10,31,.7);
+    border:0; padding:12px 16px; cursor:pointer; letter-spacing:1px; box-shadow:inset 0 0 0 2px rgba(255,90,110,.55), 0 4px 0 rgba(0,0,0,.4); touch-action:manipulation; }
+  button:active { transform:translateY(3px); box-shadow:inset 0 0 0 2px rgba(255,90,110,.55), 0 1px 0 rgba(0,0,0,.4); }
+  button.big { background:var(--gold); color:var(--ink); font-size:18px; padding:15px 22px;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.45), 0 5px 0 var(--gold-dk), 0 0 26px rgba(255,207,90,.4); }
+  button:disabled { opacity:.45; cursor:default; }
+  .jersey { font-family:'Jersey 10','Silkscreen',monospace; font-weight:400; }
+  .hud { position:fixed; z-index:3; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-start;
+    padding:calc(env(safe-area-inset-top) + 14px) 18px 0; pointer-events:none; }
+  #hNum { font-size:12px; color:var(--red); letter-spacing:2px; margin-bottom:4px; }
+  #hName { font-size:30px; letter-spacing:2px; line-height:1; text-shadow:3px 3px 0 rgba(0,0,0,.6); white-space:nowrap; }
+  .hr { text-align:right; }
+  #hClock { font-size:34px; line-height:1; text-shadow:3px 3px 0 rgba(0,0,0,.6); }
+  #hClock.low { color:var(--red); }
+  #hSub { font-size:11px; opacity:.75; margin-top:6px; letter-spacing:1px; }
+  @media (max-width:440px) { #hName { font-size:22px; } #hClock { font-size:28px; } }
+  .ctrl { position:fixed; z-index:3; top:calc(env(safe-area-inset-top) + 70px); left:16px; right:16px; display:flex; justify-content:space-between; pointer-events:none; }
+  .ctrl button { pointer-events:auto; font-size:11px; padding:8px 10px; }
+  #cap { position:fixed; z-index:3; left:16px; right:16px; text-align:center; font-size:13px; line-height:1.6; color:#fff3d6;
+    text-shadow:2px 2px 0 rgba(0,0,0,.8); pointer-events:none; transition:opacity .5s; }
+  #pad { position:fixed; z-index:4; left:0; right:0; bottom:0; height:calc(env(safe-area-inset-bottom) + 170px); pointer-events:none; }
+  #pad button { position:absolute; width:62px; height:62px; padding:0; border-radius:14px; background:rgba(20,18,46,.72); pointer-events:auto;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.25), 0 4px 0 rgba(0,0,0,.4); display:grid; place-items:center; font-size:11px; }
+  #pad button.on { background:rgba(255,207,90,.3); }
+  #pad svg { width:24px; height:24px; }
+  #kU { left:84px; bottom:calc(env(safe-area-inset-bottom) + 92px); } #kD { left:84px; bottom:calc(env(safe-area-inset-bottom) + 14px); }
+  #kL { left:16px; bottom:calc(env(safe-area-inset-bottom) + 53px); } #kR { left:152px; bottom:calc(env(safe-area-inset-bottom) + 53px); }
+  #kW { right:16px; bottom:calc(env(safe-area-inset-bottom) + 92px); width:84px !important; }
+  #kRw { right:16px; bottom:calc(env(safe-area-inset-bottom) + 14px); width:84px !important; box-shadow:inset 0 0 0 2px rgba(184,156,255,.6), 0 4px 0 rgba(0,0,0,.4) !important; }
+  .screen { position:fixed; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    padding:calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 20px); text-align:center; }
+  .dim { background:rgba(4,4,14,.74); backdrop-filter:blur(2px); }
+  #emblem { width:min(200px,50vw); height:min(90px,14vh); flex:none; }
+  #title h1 { margin:0; font-size:clamp(50px,10vw,100px); letter-spacing:4px; line-height:.86; color:var(--cream);
+    text-shadow:4px 4px 0 #8a2030, 8px 8px 0 rgba(0,0,0,.45); }
+  #title h1 span { display:block; color:var(--gold); text-shadow:4px 4px 0 var(--gold-dk), 8px 8px 0 rgba(0,0,0,.45); }
+  .tag { font-size:13px; color:#cfd8ff; letter-spacing:2px; margin:6px 0 16px; opacity:.85; }
+  .menu { display:flex; flex-direction:column; gap:12px; width:min(300px,86vw); }
+  .row { display:flex; gap:10px; } .row button { flex:1; }
+  .small { font-size:11px; opacity:.7; line-height:1.6; }
+  .by { position:fixed; bottom:calc(env(safe-area-inset-bottom) + 14px); left:0; right:0; font-size:11px; opacity:.75; }
+  .by a { color:var(--gold); text-decoration:none; }
+  .card { background:rgba(11,10,31,.92); padding:26px 24px; width:min(340px,88vw); box-shadow:inset 0 0 0 3px var(--gold), 0 10px 0 rgba(0,0,0,.4);
+    display:flex; flex-direction:column; gap:12px; align-items:stretch; }
+  .card h2 { margin:0; font-size:44px; letter-spacing:3px; color:var(--gold); line-height:1; }
+  .card p { margin:0; font-size:13px; line-height:1.7; color:#e8e4f8; }
+  #grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:min(340px,90vw); }
+  #grid button { aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:4px; }
+  #grid button .n { font-family:'Jersey 10',monospace; font-size:34px; line-height:1; }
+  #grid button .t { font-size:8px; opacity:.8; }
+  #grid button.done { box-shadow:inset 0 0 0 2px var(--gold), 0 4px 0 rgba(0,0,0,.4); }
+  #ending { background:radial-gradient(circle at 50% 45%, rgba(184,156,255,.12), rgba(4,4,14,.94) 62%); }
+  #ending h2 { font-size:clamp(40px,8vw,74px); letter-spacing:4px; margin:0; color:var(--cream); line-height:.9; text-shadow:4px 4px 0 #8a2030, 8px 8px 0 rgba(0,0,0,.5); }
+  #ending p { font-size:13px; line-height:1.8; max-width:440px; margin:0; color:#e8e4f8; }
+  #toast { position:fixed; z-index:6; left:50%; top:34%; transform:translate(-50%,-50%); font-size:30px; letter-spacing:2px; color:var(--red);
+    text-shadow:3px 3px 0 rgba(0,0,0,.7); pointer-events:none; opacity:0; transition:opacity .2s; white-space:nowrap; }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud hidden" id="hud">
+  <div><div id="hNum">HEIST 1</div><div id="hName" class="jersey">THE JOB</div></div>
+  <div class="hr"><div id="hClock" class="jersey">1:00</div><div id="hSub">MINUTE 1</div></div>
+</div>
+<div class="ctrl hidden" id="ctrl"><button id="bMenu">MENU</button><button id="bRewind">END MINUTE</button></div>
+<div id="cap"></div>
+<div id="pad" class="hidden">
+  <button id="kU" aria-label="Up"><svg viewBox="0 0 9 9"><path fill="#f4efe6" d="M4 2h1v1h1v1h1v1h1v1H1V5h1V4h1V3h1z"/></svg></button>
+  <button id="kL" aria-label="Left"><svg viewBox="0 0 9 9"><path fill="#f4efe6" d="M2 4h1V3h1V2h1V1h1v7H5V7H4V6H3V5H2z"/></svg></button>
+  <button id="kR" aria-label="Right"><svg viewBox="0 0 9 9"><path fill="#f4efe6" d="M7 4H6V3H5V2H4V1H3v7h1V7h1V6h1V5h1z"/></svg></button>
+  <button id="kD" aria-label="Down"><svg viewBox="0 0 9 9"><path fill="#f4efe6" d="M4 7h1V6h1V5h1V4h1V3H1v1h1v1h1v1h1z"/></svg></button>
+  <button id="kW">WAIT</button>
+  <button id="kRw">END MINUTE</button>
+</div>
+<div id="toast" class="jersey"></div>
+
+<div class="screen" id="title">
+  <div id="emblem"></div>
+  <h1 class="jersey">ONE MINUTE<span>HEIST</span></h1>
+  <p class="tag">one room · one minute · one gem</p>
+  <div class="menu">
+    <button class="big" id="tPlay">PLAY</button>
+    <button id="tLevels">HEISTS</button>
+    <div class="row"><button id="tSfx">SFX ON</button><button id="tMusic">MUSIC ON</button></div>
+    <div class="small" id="tStats"></div>
+  </div>
+  <div class="by">a <a href="../index.html">BitPillars</a> game</div>
+</div>
+<div class="screen dim hidden" id="levels">
+  <h2 class="jersey" style="margin:0;font-size:44px;letter-spacing:3px;color:var(--gold)">HEISTS</h2>
+  <div id="grid"></div>
+  <button id="lBack">BACK</button>
+</div>
+<div class="screen dim hidden" id="pause">
+  <div class="card">
+    <h2 class="jersey">PAUSED</h2>
+    <button class="big" id="pResume">RESUME</button>
+    <div class="row"><button id="pRestart">START OVER</button><button id="pLevels">HEISTS</button></div>
+    <div class="row"><button id="pSfx">SFX</button><button id="pMusic">MUSIC</button></div>
+    <button id="pTitle">TITLE</button>
+    <p class="small" style="font-size:10px">ARROWS/WASD MOVE · SPACE WAIT · R END THE MINUTE</p>
+  </div>
+</div>
+<div class="screen dim hidden" id="clear">
+  <div class="card">
+    <h2 class="jersey">CLEAN</h2>
+    <p id="cInfo"></p>
+    <div class="row"><button id="cRetry">AGAIN</button><button class="big" id="cNext">NEXT</button></div>
+  </div>
+</div>
+<div class="screen hidden" id="ending">
+  <h2 class="jersey">ONE MINUTE<br>HEIST</h2>
+  <p id="eInfo"></p>
+  <div class="menu" style="margin-top:10px">
+    <div class="row"><button id="eLevels">HEISTS</button><button id="eTitle">TITLE</button></div>
+    <button class="big" id="eBP">MORE BITPILLARS GAMES</button>
+  </div>
+</div>
+
+<script>
+// ONE MINUTE HEIST engine. One room, a one-minute loop, guards with flashlights, a gem to steal.
+// Every minute the room resets and you start again, keeping only what you learned.
+// The world moves in ticks (six per second); everything is deterministic, shared by the browser and Node.
+(function (root) {
+  const W = 15, H = 11, TPS = 6, LOOP = 60 * TPS;   // 360 ticks in a minute
+  const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];  // up right down left
+  const VIEW = 4, TIMED = 10 * TPS;                  // flashlight reach, lever gates stay open for 10 s
+
+  // Legend: # wall  S start and exit  G gem  k key  D locked door (a key opens it for this loop)
+  //         p plate (holds V bars open while someone stands on it)  l lever (opens T gates for 10 s)
+  // guards: { path: [[x,y], ...] waypoints joined by straight lines, every: ticks per step, pause: ticks at each end }
+  // echo: true means the guard is you, replaying your previous minute.
+  const HEISTS = [
+    { name: 'The Job', hint: 'Take the gem and get back to the door you came in. Stay out of the light.', map: [
+      '###############', '#S.....#......#', '#......#......#', '#......#......#', '#.............#', '#......#....G.#',
+      '#......#......#', '#......#......#', '#......#......#', '#......#......#', '###############'],
+      guards: [{ path: [[8, 5], [13, 5]], every: 2, pause: 3 }] },
+    { name: 'Keycard', hint: 'The vault door is locked. Somebody left a keycard upstairs.', map: [
+      '###############', '#S....#.......#', '#.....#...k...#', '#.....#.......#', '#.............#', '#.....#########',
+      '#.....#.......#', '#.....D...G...#', '#.....#.......#', '#.....#.......#', '###############'],
+      guards: [{ path: [[8, 1], [12, 1], [12, 3], [8, 3]], loop: true, every: 2 }, { path: [[8, 6], [12, 6], [12, 9], [8, 9]], loop: true, every: 2, offset: 7 }] },
+    { name: 'Lever', hint: 'The lever opens the vault gate for ten seconds. Run.', map: [
+      '###############', '#S...........l#', '#.............#', '#.###########.#', '#.#.........#.#', '#.#....G....#.#',
+      '#.#.........#.#', '#.####T######.#', '#.............#', '#.............#', '###############'],
+      guards: [{ path: [[4, 4], [10, 4], [10, 6], [4, 6]], loop: true, every: 2 }, { path: [[2, 9], [12, 9]], every: 2, pause: 2 }] },
+    { name: 'Pressure', hint: 'The bars only open while something stands on the gold plate.', map: [
+      '###############', '#S......#.....#', '#.......#..p..#', '#.......#.....#', '#.......#.....#', '#.............#',
+      '#.......###V###', '#.......#.....#', '#.......#..G..#', '#.......#.....#', '###############'],
+      guards: [{ path: [[11, 5], [11, 2]], every: 2, pause: 14 }, { path: [[2, 3], [5, 3], [5, 8], [2, 8]], loop: true, every: 3 }] },
+    { name: 'Night Shift', hint: 'Three guards tonight. Watch them for a minute first, if you like.', map: [
+      '###############', '#S..#.....#..k#', '#...#.....#...#', '#...#..#..#...#', '#......#......#', '###.#######.###',
+      '#.............#', '#.#####D#####.#', '#.#.........#.#', '#.#....G....#.#', '###############'],
+      guards: [{ path: [[5, 1], [9, 1], [9, 2], [5, 2]], loop: true, every: 2 }, { path: [[1, 6], [13, 6]], every: 2, pause: 4 }, { path: [[3, 8], [11, 8]], every: 3, pause: 6, offset: 20 }] },
+    { name: 'Fool You', hint: 'No guard tonight. Strange.', finale: true, map: [
+      '###############', '#S............#', '#.............#', '#.....###V###.#', '#.....#.....#.#', '#.....#..G..#.#',
+      '#.....#.....#.#', '#.....#######.#', '#.............#', '#............p#', '###############'],
+      guards: [{ echo: true }] },
+  ];
+
+  function parse(def) {
+    const rows = def.map, tiles = new Uint8Array(W * H);   // 0 floor 1 wall 2 door 3 bars 4 timed gate
+    let sx = 1, sy = 1, gem = -1; const keys = [], plates = [], levers = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const ch = rows[y][x], k = y * W + x;
+      if (ch === '#') tiles[k] = 1; else if (ch === 'D') tiles[k] = 2; else if (ch === 'V') tiles[k] = 3; else if (ch === 'T') tiles[k] = 4;
+      else if (ch === 'S') { sx = x; sy = y; } else if (ch === 'G') gem = k; else if (ch === 'k') keys.push(k);
+      else if (ch === 'p') plates.push(k); else if (ch === 'l') levers.push(k);
+    }
+    const L = Object.assign({ hint: '', guards: [] }, def, { tiles, sx, sy, gem, keys, plates, levers });
+    L.routes = L.guards.filter(g => !g.echo).map(g => route(g));
+    return L;
+  }
+  // a guard's position and facing for every tick of the minute
+  function route(g) {
+    const legs = [g.path[0].slice()];                       // straight legs between waypoints, one tile at a time
+    for (let i = 1; i < g.path.length; i++) { let [cx, cy] = legs[legs.length - 1]; const [x, y] = g.path[i];
+      while (cx !== x) { cx += Math.sign(x - cx); legs.push([cx, cy]); } while (cy !== y) { cy += Math.sign(y - cy); legs.push([cx, cy]); } }
+    if (g.loop) { let [cx, cy] = legs[legs.length - 1]; const [x, y] = legs[0];   // close the circuit back to the start
+      while (cx !== x) { cx += Math.sign(x - cx); legs.push([cx, cy]); } while (cy !== y) { cy += Math.sign(y - cy); legs.push([cx, cy]); } legs.pop(); }
+    const every = g.every || 2, pause = g.pause || 0, out = [];
+    let i = 0, dir = 1, wait = pause, f = g.face !== undefined ? g.face : faceTo(legs[0], legs[1] || legs[0]), t = (g.offset || 0);
+    // run the route forward so guards can start mid-patrol
+    const ticks = LOOP + 2 + (g.offset || 0);
+    for (let k = 0; k < ticks; k++) {
+      if (k >= (g.offset || 0)) out.push({ x: legs[i][0], y: legs[i][1], f });
+      if ((k + 1) % every) continue;
+      if (g.loop) { const n = (i + 1) % legs.length; f = faceTo(legs[i], legs[n]); i = n; continue; }
+      const n = i + dir;
+      if (n < 0 || n >= legs.length) { if (wait > 0) { wait--; continue; } dir = -dir; wait = pause; f = faceTo(legs[i], legs[i + dir]); continue; }
+      f = faceTo(legs[i], legs[n]); i = n;
+    }
+    return out;
+  }
+  function faceTo(a, b) { const dx = b[0] - a[0], dy = b[1] - a[1]; return dy < 0 ? 0 : dx > 0 ? 1 : dy > 0 ? 2 : dx < 0 ? 3 : 2; }
+
+  function newLoop(L, run) {
+    const st = { x: L.sx, y: L.sy, f: 2, t: 0, hasGem: false, keys: 0, opened: new Set(), leverUntil: -1, caught: false, won: false, over: false,
+      path: [{ x: L.sx, y: L.sy, f: 2 }], loop: run ? run.loop : 1, echo: run && run.lastPath ? run.lastPath : null };
+    return st;
+  }
+  const blockedTile = (L, st, k, plateHeld) => {
+    const t = L.tiles[k];
+    if (t === 1) return true;
+    if (t === 2) return !st.opened.has(k);
+    if (t === 3) return !plateHeld;
+    if (t === 4) return !(st.leverUntil > st.t);
+    return false;
+  };
+  // where every watcher is at tick t (guards on routes, and your echo replaying your last minute)
+  function watchers(L, st, t) {
+    const out = L.routes.map(r => r[Math.min(t, r.length - 1)]);
+    if (st.echo && L.guards.some(g => g.echo)) out.push(Object.assign({ echo: true }, st.echo[Math.min(t, st.echo.length - 1)]));
+    return out;
+  }
+  function plateHeldAt(L, st, t, px, py) {
+    if (!L.plates.length) return false;
+    const ws = watchers(L, st, t);
+    return L.plates.every(k => { const x = k % W, y = (k / W) | 0; return (px === x && py === y) || ws.some(w => w.x === x && w.y === y); });
+  }
+  // the tiles a flashlight lights up: a short cone, stopped by walls and closed doors
+  function cone(L, st, w, plateHeld) {
+    const out = [], [dx, dy] = DIRS[w.f];
+    for (let d = 1; d <= VIEW; d++) {
+      const spread = d === 1 ? 0 : 1;
+      for (let s = -spread; s <= spread; s++) {
+        const x = w.x + dx * d + (dy !== 0 ? s : 0), y = w.y + dy * d + (dx !== 0 ? s : 0);
+        if (x < 0 || y < 0 || x >= W || y >= H) continue;
+        if (los(L, st, w.x, w.y, x, y, plateHeld)) out.push(y * W + x);
+      }
+    }
+    return out;
+  }
+  function los(L, st, x0, y0, x1, y1, plateHeld) {
+    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+    for (let i = 1; i <= n; i++) {
+      const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n);
+      if (blockedTile(L, st, y * W + x, plateHeld)) return false;
+    }
+    return true;
+  }
+
+  // one tick. dir: 0..3 to step, -1 to wait
+  function step(L, st, dir) {
+    const ev = [];
+    if (st.over) return ev;
+    const t1 = st.t + 1;
+    if (dir >= 0) {
+      st.f = dir;
+      const nx = st.x + DIRS[dir][0], ny = st.y + DIRS[dir][1], k = ny * W + nx;
+      if (nx >= 0 && ny >= 0 && nx < W && ny < H) {
+        if (L.tiles[k] === 2 && !st.opened.has(k) && st.keys > 0) { st.opened.add(k); ev.push({ type: 'unlock', k }); }
+        const held = plateHeldAt(L, st, t1, nx, ny) || plateHeldAt(L, st, st.t, st.x, st.y);
+        if (!blockedTile(L, st, k, held)) { st.x = nx; st.y = ny; ev.push({ type: 'move' }); }
+        else ev.push({ type: 'bump' });
+      }
+    }
+    st.t = t1;
+    const k = st.y * W + st.x;
+    if (L.keys.includes(k) && !(st.keysTaken || (st.keysTaken = new Set())).has(k)) { st.keysTaken.add(k); st.keys++; ev.push({ type: 'key' }); }
+    if (L.levers.includes(k) && st.leverUntil <= st.t) { st.leverUntil = st.t + TIMED; ev.push({ type: 'lever' }); }
+    if (k === L.gem && !st.hasGem) { st.hasGem = true; ev.push({ type: 'gem' }); }
+    st.path.push({ x: st.x, y: st.y, f: st.f });
+    // caught?
+    const held = plateHeldAt(L, st, st.t, st.x, st.y);
+    const ws = watchers(L, st, st.t), prev = watchers(L, st, st.t - 1), me = st.path[st.path.length - 2];
+    for (let i = 0; i < ws.length; i++) {
+      const w = ws[i], p = prev[i];
+      const swapped = p && w.x === me.x && w.y === me.y && p.x === st.x && p.y === st.y;
+      if ((w.x === st.x && w.y === st.y) || swapped || cone(L, st, w, held).includes(k)) { st.caught = true; st.over = true; ev.push({ type: 'caught', by: i, echo: !!w.echo }); return ev; }
+    }
+    if (st.hasGem && st.x === L.sx && st.y === L.sy) { st.won = true; st.over = true; ev.push({ type: 'win' }); return ev; }
+    if (st.t >= LOOP) { st.over = true; ev.push({ type: 'timeup' }); }
+    return ev;
+  }
+
+  const api = { W, H, TPS, LOOP, DIRS, VIEW, TIMED, HEISTS, parse, route, newLoop, step, watchers, cone, plateHeldAt, blockedTile };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.HE = api;
+})(this);
+
+</script>
+<script>
+(function () {
+'use strict';
+const $ = id => document.getElementById(id);
+const { W, H, TPS, LOOP, DIRS, HEISTS } = HE;
+const T = 10, AW = W * T, AH = H * T, TICK = 1000 / TPS;
+
+const SK = 'one-minute-heist-v1';
+let save = { cleared: -1, best: {}, finished: false, minutes: 0, sfx: true, music: true };
+try { const s = JSON.parse(localStorage.getItem(SK)); if (s) save = Object.assign(save, s); } catch (e) {}
+const persist = () => { try { localStorage.setItem(SK, JSON.stringify(save)); } catch (e) {} };
+
+// ---------------- audio ----------------
+let AC = null, master, sfxG, musG, noiseBuf, musTimer = null, musNext = 0, musStep = 0;
+function audio() {
+  if (AC) { if (AC.state === 'suspended') AC.resume().catch(() => {}); return; }
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = 0.5; master.connect(AC.destination);
+    sfxG = AC.createGain(); sfxG.gain.value = save.sfx ? 1 : 0; sfxG.connect(master);
+    musG = AC.createGain(); musG.gain.value = save.music ? 0.16 : 0; musG.connect(master);
+    noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    startMusic();
+  } catch (e) { AC = null; }
+}
+function tone(f, dur, type, vol, slide, when, dest) {
+  if (!AC) return;
+  const t = AC.currentTime + (when || 0), o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || 'square'; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.1, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(dest || sfxG); o.start(t); o.stop(t + dur + 0.03);
+}
+function noise(dur, vol, freq) {
+  if (!AC) return;
+  const t = AC.currentTime, s = AC.createBufferSource(); s.buffer = noiseBuf;
+  const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq || 1000;
+  const g = AC.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(sfxG); s.start(t); s.stop(t + dur + 0.02);
+}
+const SFX = {
+  step() { noise(0.03, 0.05, 1800); },
+  bump() { tone(110, 0.06, 'square', 0.04); },
+  key() { [988, 1319].forEach((f, i) => tone(f, 0.12, 'square', 0.05, null, i * 0.06)); },
+  unlock() { noise(0.08, 0.1, 2500); tone(392, 0.15, 'square', 0.05, 523); },
+  lever() { tone(180, 0.1, 'square', 0.06, 120); noise(0.2, 0.08, 400); },
+  gem() { [784, 988, 1175, 1568, 1976].forEach((f, i) => tone(f, 0.25, 'triangle', 0.06, null, i * 0.05)); },
+  caught() { tone(880, 0.12, 'square', 0.08); tone(880, 0.12, 'square', 0.08, null, 0.18); tone(660, 0.3, 'sawtooth', 0.06, null, 0.36); },
+  rewind() { tone(1400, 0.8, 'sawtooth', 0.03, 120); noise(0.8, 0.06, 1200); },
+  tick() { tone(1200, 0.03, 'square', 0.03); },
+  win() { [523, 659, 784, 1047, 1319].forEach((f, i) => { tone(f, 0.3, 'square', 0.04, null, i * 0.08); tone(f / 2, 0.35, 'triangle', 0.07, null, i * 0.08); }); },
+  click() { tone(880, 0.04, 'square', 0.03); },
+};
+function startMusic() {
+  if (!AC || musTimer) return;
+  musNext = AC.currentTime + 0.1;
+  const bass = [110, 110, 130.8, 98, 110, 110, 146.8, 123.5];
+  musTimer = setInterval(() => {
+    if (!AC) return;
+    while (musNext < AC.currentTime + 0.25) {
+      const t = musNext - AC.currentTime, beat = musStep % 16, bar = Math.floor(musStep / 16) % 8;
+      if (beat % 4 === 0) tone(bass[bar], 0.22, 'triangle', 0.3, null, t, musG);
+      if (beat % 4 === 2) tone(bass[bar] * 1.5, 0.12, 'triangle', 0.16, null, t, musG);
+      if (beat % 2 === 1) { const n = noiseBuf; if (n && Math.random() < 0.8) { const s = AC.createBufferSource(); s.buffer = n; const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 7000; const g = AC.createGain(); g.gain.setValueAtTime(0.05, AC.currentTime + t); g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + t + 0.04); s.connect(f); f.connect(g); g.connect(musG); s.start(AC.currentTime + t); s.stop(AC.currentTime + t + 0.05); } }
+      if (beat === 6 || beat === 14) if (Math.random() < 0.6) tone([440, 523, 587, 659][Math.floor(Math.random() * 4)], 0.18, 'square', 0.035, null, t, musG);
+      musNext += 60 / 112 / 4; musStep++;
+    }
+  }, 60);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) { if (G.mode === 'play') openPause(); if (AC) AC.suspend().catch(() => {}); } else if (AC) AC.resume().catch(() => {}); });
+
+// ---------------- canvas ----------------
+const cv = $('c'), ctx = cv.getContext('2d');
+const lo = document.createElement('canvas'), g = lo.getContext('2d');
+let S = 3, DPR = 1, ox = 0, oy = 0, touch = matchMedia('(pointer:coarse)').matches;
+const G = { mode: 'title', idx: 0, L: null, st: null, run: null, acc: 0, prev: null, prevW: [], minutes: 0, seen: 0, rewindAt: 0, rewindWhy: '', wonAt: 0,
+  particles: [], flash: 0, flashCol: '#fff', shake: 0, footprints: null, echoMet: false, start: 0 };
+function fit() {
+  DPR = Math.min(window.devicePixelRatio || 1, 3);
+  const Wc = innerWidth, Hc = innerHeight;
+  cv.width = Math.round(Wc * DPR); cv.height = Math.round(Hc * DPR);
+  const top = 112, bottom = touch ? 190 : 60;
+  const availW = Wc * 0.96, availH = Math.max(120, Hc - top - bottom);
+  S = Math.max(1, Math.floor(Math.min(availW * DPR / AW, availH * DPR / AH)));
+  lo.width = Math.ceil(cv.width / S); lo.height = Math.ceil(cv.height / S);
+  ox = Math.floor((lo.width - AW) / 2); oy = Math.floor(((top + availH / 2) * DPR) / S - AH / 2);
+  $('cap').style.top = ((oy + AH) * S / DPR + 8) + 'px';
+  $('pad').classList.toggle('hidden', !touch || G.mode !== 'play');
+}
+addEventListener('resize', fit);
+function hsh(x, y) { let h = (x | 0) * 374761393 + (y | 0) * 668265263; h = (h ^ (h >>> 13)) * 1274126177; return (h ^ (h >>> 16)) >>> 0; }
+
+// ---------------- heists ----------------
+function startHeist(idx) {
+  G.idx = idx; G.L = HE.parse(HEISTS[idx]); G.run = { loop: 1, lastPath: null }; G.minutes = 0; G.seen = 0; G.footprints = null; G.echoMet = false; G.start = performance.now();
+  newMinute(); G.mode = 'play'; show(null);
+  cap(G.L.hint);
+}
+function newMinute() {
+  G.st = HE.newLoop(G.L, G.run); G.acc = 0; G.prev = { x: G.st.x, y: G.st.y }; G.prevW = HE.watchers(G.L, G.st, 0).map(w => ({ x: w.x, y: w.y }));
+  G.particles = []; G.rewindAt = 0; G.minutes++; hud();
+  if (G.L.finale && G.run.loop === 2 && !G.echoMet) { G.echoMet = true; cap('Somebody is here tonight. Walking your route.'); }
+}
+function hud() {
+  const st = G.st, left = Math.max(0, LOOP - st.t) / TPS;
+  $('hNum').textContent = 'HEIST ' + (G.idx + 1) + ' / ' + HEISTS.length;
+  $('hName').textContent = G.L.name.toUpperCase();
+  $('hClock').textContent = '0:' + String(Math.ceil(left)).padStart(2, '0').replace('60', '60'); if (left >= 60) $('hClock').textContent = '1:00';
+  $('hClock').classList.toggle('low', left <= 10);
+  $('hSub').textContent = 'MINUTE ' + G.run.loop + (st.hasGem ? ' · GEM IN HAND' : st.keys ? ' · KEYCARD' : '');
+}
+let capT = 0;
+function cap(t) { $('cap').textContent = t; $('cap').style.opacity = 1; }
+
+// ---------------- input ----------------
+const held = []; let tapDir = null, endReq = false;
+const KEYS = { arrowup: 0, w: 0, arrowright: 1, d: 1, arrowdown: 2, s: 2, arrowleft: 3, a: 3 };
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase(); audio();
+  if (k in KEYS) { e.preventDefault(); const d = KEYS[k]; if (!held.includes(d)) held.push(d); if (!e.repeat) tapDir = d; }
+  else if (k === ' ') { e.preventDefault(); tapDir = -1; }
+  else if (k === 'r') { if (G.mode === 'play') endReq = true; }
+  else if (k === 'escape' || k === 'p') { if (G.mode === 'play') openPause(); else if (G.mode === 'pause') resume(); }
+  else if (k === 'enter' && G.mode === 'clear') $('cNext').click();
+});
+addEventListener('keyup', e => { const k = e.key.toLowerCase(); if (k in KEYS) { const i = held.indexOf(KEYS[k]); if (i >= 0) held.splice(i, 1); } });
+addEventListener('blur', () => { held.length = 0; });
+function bindPad(id, d) {
+  const el = $(id), ids = new Set();
+  el.addEventListener('pointerdown', e => { e.preventDefault(); audio(); ids.add(e.pointerId); try { el.setPointerCapture(e.pointerId); } catch (_) {}
+    if (d === 'end') { endReq = true; } else if (d === -1) tapDir = -1; else { if (!held.includes(d)) held.push(d); tapDir = d; } el.classList.add('on'); });
+  const off = e => { ids.delete(e.pointerId); if (!ids.size) { el.classList.remove('on'); if (d >= 0) { const i = held.indexOf(d); if (i >= 0) held.splice(i, 1); } } };
+  el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off); el.addEventListener('lostpointercapture', off);
+}
+bindPad('kU', 0); bindPad('kR', 1); bindPad('kD', 2); bindPad('kL', 3); bindPad('kW', -1); bindPad('kRw', 'end');
+addEventListener('touchstart', () => { if (!touch) { touch = true; fit(); } }, { passive: true });
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+// ---------------- loop ----------------
+function burst(x, y, n, cols, spd, life) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, v = (0.3 + Math.random()) * spd;
+  G.particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: life * (0.5 + Math.random() * 0.7), max: life, c: cols[i % cols.length] }); } }
+function onEvents(ev) {
+  const st = G.st;
+  for (const e of ev) {
+    if (e.type === 'move') SFX.step();
+    else if (e.type === 'bump') SFX.bump();
+    else if (e.type === 'key') { SFX.key(); burst(st.x * T + 5, st.y * T + 5, 10, ['#ffcf5a', '#fff4c9'], 0.05, 400); toast('KEYCARD', '#ffcf5a'); }
+    else if (e.type === 'unlock') SFX.unlock();
+    else if (e.type === 'lever') { SFX.lever(); toast('GATE OPEN · 10 S', '#8fe9ff'); }
+    else if (e.type === 'gem') { SFX.gem(); burst(st.x * T + 5, st.y * T + 5, 24, ['#ffcf5a', '#fff4c9', '#ffffff'], 0.07, 700); toast('GOT IT. NOW GET OUT.', '#ffcf5a'); }
+    else if (e.type === 'caught') { SFX.caught(); G.seen++; G.flash = 1; G.flashCol = '#ff5a6e'; G.shake = 3;
+      if (e.echo) { toast('...THAT WAS YOU', '#b89cff'); setTimeout(() => cap('The guard is you. Last minute’s you, walking where you walked. Fool yourself.'), 900); }
+      else toast('SEEN', '#ff5a6e');
+      beginRewind('seen'); }
+    else if (e.type === 'timeup') { toast('TIME', '#ff5a6e'); beginRewind('time'); }
+    else if (e.type === 'win') { SFX.win(); G.wonAt = performance.now(); }
+  }
+  hud();
+}
+function beginRewind(why) { G.rewindAt = performance.now(); G.rewindWhy = why; SFX.rewind(); }
+let last = performance.now();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (G.mode === 'play' && G.st) {
+    const st = G.st;
+    if (!st.over) {
+      if (endReq) { endReq = false; st.over = true; toast('REWIND', '#b89cff'); beginRewind('end'); }
+      else {
+        G.acc += dt * 1000 * (window.__speed || 1);
+        let n = 0;
+        while (G.acc >= TICK && !st.over && n++ < 8) {
+          G.acc -= TICK; G.prev = { x: st.x, y: st.y }; G.prevW = HE.watchers(G.L, st, st.t).map(w => ({ x: w.x, y: w.y }));
+          let d = -1;
+          if (window.__auto) d = window.__auto(st);
+          else if (tapDir !== null) { d = tapDir; tapDir = null; } else if (held.length) d = held[held.length - 1];
+          if (d === 'R') { st.over = true; beginRewind('end'); break; }
+          onEvents(HE.step(G.L, st, d));
+          const left = Math.ceil((LOOP - st.t) / TPS); if (left <= 5 && st.t % TPS === 0 && !st.over) SFX.tick();
+        }
+      }
+    }
+    endReq = false;
+    if (st.over && !st.won && G.rewindAt && now - G.rewindAt > 1100) {
+      G.footprints = st.path.slice(); G.run = { loop: G.run.loop + 1, lastPath: st.path }; newMinute();
+    }
+    if (st.won && G.wonAt && now - G.wonAt > 1000) { G.wonAt = 0; heistDone(); }
+  }
+  render(now, dt);
+}
+
+// ---------------- render ----------------
+const PAL = { floorA: '#1a1830', floorB: '#1e1c38', wall: '#3a3460', wallTop: '#5c548f', wallDk: '#221e3c' };
+function render(now, dt) {
+  const Wl = lo.width, Hl = lo.height;
+  g.globalAlpha = 1; g.fillStyle = '#07060f'; g.fillRect(0, 0, Wl, Hl);
+  if (G.mode === 'title' || !G.L) { renderEmblem(now); blit(); return; }
+  const L = G.L, st = G.st;
+  G.shake = Math.max(0, G.shake - dt * 12);
+  const X0 = ox + Math.round((Math.random() - 0.5) * G.shake), Y0 = oy + Math.round((Math.random() - 0.5) * G.shake);
+  const a = st.over ? 1 : Math.min(1, G.acc / TICK);
+  const held = HE.plateHeldAt(L, st, st.t, st.x, st.y);
+  // floor and walls
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const k = y * W + x, t = L.tiles[k], px = X0 + x * T, py = Y0 + y * T, h = hsh(x, y);
+    if (t === 1) {
+      const below = y + 1 < H && L.tiles[k + W] !== 1;
+      g.fillStyle = PAL.wall; g.fillRect(px, py, T, T);
+      g.fillStyle = PAL.wallTop; g.fillRect(px, py, T, below ? 7 : T); g.fillStyle = '#7a71b8'; if (y === 0 || L.tiles[k - W] !== 1) g.fillRect(px, py, T, 1);
+      if (below) { g.fillStyle = PAL.wallDk; g.fillRect(px, py + 7, T, 3); g.fillStyle = '#2c2750'; g.fillRect(px + (h % 6), py + 8, 3, 1); }
+      continue;
+    }
+    g.fillStyle = (x + y) % 2 ? PAL.floorA : PAL.floorB; g.fillRect(px, py, T, T);
+    if (h % 9 === 0) { g.fillStyle = '#25223f'; g.fillRect(px + h % 7, py + (h >> 4) % 7, 2, 1); }
+    if (t === 2) drawDoor(px, py, st.opened.has(k));
+    else if (t === 3) drawBars(px, py, held, '#ffcf5a', '#8a5410');
+    else if (t === 4) drawBars(px, py, st.leverUntil > st.t, '#8fe9ff', '#2c6f8a', st.leverUntil > st.t ? (st.leverUntil - st.t) / HE.TIMED : 0);
+  }
+  // exit mat
+  { const px = X0 + L.sx * T, py = Y0 + L.sy * T; g.fillStyle = st.hasGem ? '#5fd39a' : '#2f6b50'; g.fillRect(px + 1, py + 1, 8, 8); g.fillStyle = '#1a1830'; g.fillRect(px + 2, py + 2, 6, 6);
+    g.fillStyle = st.hasGem ? (Math.floor(now / 250) % 2 ? '#9ff0c0' : '#5fd39a') : '#2f6b50'; g.fillRect(px + 4, py + 3, 2, 4); g.fillRect(px + 3, py + 4, 4, 1); }
+  // footprints from your last minute: you keep what you learned
+  if (G.footprints) { G.footprints.forEach((p, i) => { if (i % 2) return; g.globalAlpha = 0.22; g.fillStyle = '#b89cff'; g.fillRect(X0 + p.x * T + 3 + (i % 4 ? 0 : 3), Y0 + p.y * T + 4, 1, 2); }); g.globalAlpha = 1; }
+  // pickups
+  for (const k of L.plates) { const px = X0 + (k % W) * T, py = Y0 + ((k / W) | 0) * T; g.fillStyle = '#8a5410'; g.fillRect(px + 1, py + 1, 8, 8); g.fillStyle = held ? '#fff4c9' : '#ffcf5a'; g.fillRect(px + 2, py + (held ? 3 : 2), 6, held ? 5 : 6); }
+  for (const k of L.levers) { const px = X0 + (k % W) * T, py = Y0 + ((k / W) | 0) * T, on = st.leverUntil > st.t;
+    g.fillStyle = '#3a3460'; g.fillRect(px + 2, py + 6, 6, 3); g.fillStyle = '#8fe9ff'; g.fillRect(px + (on ? 6 : 3), py + 2, 1, 4); g.fillStyle = on ? '#9ff0c0' : '#ff5a6e'; g.fillRect(px + (on ? 6 : 3) - 1, py + 1, 3, 2); }
+  for (const k of L.keys) { if (st.keysTaken && st.keysTaken.has(k)) continue; const px = X0 + (k % W) * T, py = Y0 + ((k / W) | 0) * T, b = Math.floor(now / 300) % 2;
+    g.fillStyle = '#ffcf5a'; g.fillRect(px + 2, py + 3 - b, 6, 4); g.fillStyle = '#c97a18'; g.fillRect(px + 2, py + 6 - b, 6, 1); g.fillStyle = '#fff4c9'; g.fillRect(px + 3, py + 4 - b, 2, 1); }
+  if (!st.hasGem) drawGem(X0 + (L.gem % W) * T + 5, Y0 + ((L.gem / W) | 0) * T + 5, now);
+  // flashlights
+  const ws = HE.watchers(L, st, st.t);
+  ws.forEach((w, i) => {
+    const tiles = HE.cone(L, st, w, held), col = w.echo ? '#7a52e0' : '#c99a22', flick = w.echo ? 0.05 * Math.sin(now / 120) : 0;
+    for (const k of tiles) {
+      const tx = k % W, ty = (k / W) | 0, d = Math.abs(tx - w.x) + Math.abs(ty - w.y);
+      g.globalCompositeOperation = 'lighter';
+      g.globalAlpha = Math.max(0.32, 0.92 - d * 0.16) + flick; g.fillStyle = col; g.fillRect(X0 + tx * T, Y0 + ty * T, T, T);
+      g.globalCompositeOperation = 'source-over';
+    }
+    g.globalAlpha = 1;
+  });
+  // guards (and your echo)
+  ws.forEach((w, i) => { const p = G.prevW[i] || w, x = p.x + (w.x - p.x) * a, y = p.y + (w.y - p.y) * a;
+    if (w.echo) drawThief(X0 + Math.round(x * T), Y0 + Math.round(y * T), w.f, now, false, true); else drawGuard(X0 + Math.round(x * T), Y0 + Math.round(y * T), w.f, now); });
+  // you
+  if (!(st.over && !st.won && G.rewindWhy === 'seen' && Math.floor(now / 100) % 2)) {
+    const x = G.prev.x + (st.x - G.prev.x) * a, y = G.prev.y + (st.y - G.prev.y) * a;
+    drawThief(X0 + Math.round(x * T), Y0 + Math.round(y * T), st.f, now, st.hasGem, false);
+  }
+  // particles
+  for (const p of G.particles) { p.x += p.vx * dt * 1000; p.y += p.vy * dt * 1000; p.life -= dt * 1000; }
+  G.particles = G.particles.filter(p => p.life > 0);
+  for (const p of G.particles) { g.globalAlpha = Math.min(1, p.life / p.max * 1.4); g.fillStyle = p.c; g.fillRect(Math.round(X0 + p.x), Math.round(Y0 + p.y), 1, 1); }
+  g.globalAlpha = 1;
+  // the minute, as a bar above the room
+  const frac = Math.max(0, 1 - st.t / LOOP);
+  g.fillStyle = 'rgba(255,255,255,0.08)'; g.fillRect(X0, Y0 - 5, AW, 2);
+  g.fillStyle = frac < 0.17 ? (Math.floor(now / 200) % 2 ? '#ff5a6e' : '#ffd0d6') : '#ffcf5a'; g.fillRect(X0, Y0 - 5, Math.round(AW * frac), 2);
+  // rewind: scanlines and a colour split
+  if (G.rewindAt) {
+    const k = Math.min(1, (now - G.rewindAt) / 1100);
+    g.globalAlpha = 0.18 + 0.25 * k; g.fillStyle = '#b89cff'; for (let y = 0; y < Hl; y += 2) g.fillRect(0, y + Math.floor(now / 30) % 2, Wl, 1);
+    g.globalAlpha = 0.5 * k; g.fillStyle = '#07060f'; g.fillRect(0, 0, Wl, Hl); g.globalAlpha = 1;
+  }
+  G.flash = Math.max(0, G.flash - dt * 4);
+  if (G.flash > 0) { g.globalAlpha = G.flash * 0.2; g.fillStyle = G.flashCol; g.fillRect(0, 0, Wl, Hl); g.globalAlpha = 1; }
+  blit();
+}
+function blit() { ctx.imageSmoothingEnabled = false; ctx.drawImage(lo, 0, 0, lo.width * S, lo.height * S); }
+function drawDoor(px, py, open) {
+  if (open) { g.fillStyle = '#5a3a20'; g.fillRect(px, py, 2, T); g.fillRect(px + T - 2, py, 2, T); return; }
+  g.fillStyle = '#7a4a26'; g.fillRect(px, py, T, T); g.fillStyle = '#a8673a'; g.fillRect(px + 1, py + 1, T - 2, 1); g.fillRect(px + 1, py + 1, 1, T - 2);
+  g.fillStyle = '#ff5a6e'; g.fillRect(px + 6, py + 4, 2, 2);
+}
+function drawBars(px, py, open, c1, c2, frac) {
+  g.fillStyle = c2; g.fillRect(px, py, 1, T); g.fillRect(px + T - 1, py, 1, T);
+  if (open) { if (frac) { g.fillStyle = c1; g.fillRect(px + 1, py + T - 1, Math.round((T - 2) * frac), 1); } return; }
+  g.fillStyle = c1; for (let i = 0; i < 4; i++) g.fillRect(px + 1 + i * 2 + 1, py, 1, T); g.fillStyle = c2; g.fillRect(px + 1, py + 4, T - 2, 1);
+}
+function drawGem(cx, cy, now) {
+  const p = 0.5 + 0.5 * Math.sin(now / 300); g.globalAlpha = 0.2 + 0.15 * p; g.fillStyle = '#ffcf5a'; g.fillRect(cx - 5, cy - 5, 11, 11); g.globalAlpha = 1;
+  for (let y = -3; y <= 3; y++) { const w = 3 - Math.abs(y); for (let x = -w; x <= w; x++) {
+    g.fillStyle = x < 0 && y < 0 ? '#fff4c9' : x > 0 && y > 0 ? '#c97a18' : '#ffcf5a'; g.fillRect(cx + x, cy + y, 1, 1); } }
+  if (Math.floor(now / 110) % 11 === 0) { g.fillStyle = '#ffffff'; g.fillRect(cx - 1, cy - 2, 1, 1); }
+}
+function drawGuard(x, y, f, now) {
+  const b = Math.floor(now / 250) % 2;
+  g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(x + 2, y + 8, 6, 2);
+  g.fillStyle = '#2c4a8a'; g.fillRect(x + 2, y + 3, 6, 6);           // uniform
+  g.fillStyle = '#e8c09a'; g.fillRect(x + 3, y + 1, 4, 3);           // face
+  g.fillStyle = '#1b2a52'; g.fillRect(x + 2, y, 6, 2); g.fillRect(x + (f === 3 ? 1 : f === 1 ? 7 : 2), y + 1, 2, 1);   // cap
+  g.fillStyle = '#ffcf5a'; g.fillRect(x + 4, y + 5, 2, 1);           // badge
+  const [dx, dy] = DIRS[f]; g.fillStyle = '#fff4c9'; g.fillRect(x + 4 + dx * 4, y + 5 + dy * 3, 2, 2);   // flashlight
+  g.fillStyle = '#1b2a52'; g.fillRect(x + 3, y + 9, 1, 1 - b); g.fillRect(x + 6, y + 9, 1, b);
+}
+function drawThief(x, y, f, now, gem, echo) {
+  g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(x + 2, y + 8, 6, 2);
+  const body = echo ? '#5a4a9a' : '#2a2440', hood = echo ? '#7a68c8' : '#3c3460', scarf = echo ? '#e0d6ff' : '#ff5a6e';
+  g.fillStyle = body; g.fillRect(x + 2, y + 4, 6, 5);
+  g.fillStyle = hood; g.fillRect(x + 2, y + 1, 6, 4); g.fillRect(x + 3, y, 4, 1);
+  g.fillStyle = scarf; g.fillRect(x + 2, y + 4, 6, 1);
+  const [dx] = DIRS[f]; g.fillStyle = echo ? '#ffffff' : '#9ff0c0';
+  if (f !== 0) { g.fillRect(x + 4 + dx, y + 2, 1, 1); g.fillRect(x + 6 + dx - (dx > 0 ? 1 : 0), y + 2, 1, 1); }
+  if (echo) { const [ex, ey] = DIRS[f]; g.fillStyle = '#e0d6ff'; g.fillRect(x + 4 + ex * 4, y + 5 + ey * 3, 2, 2); }
+  if (gem) drawGem(x + 5, y - 4, now);
+}
+function renderEmblem(now) {
+  const r = $('emblem').getBoundingClientRect();
+  const cx = Math.round((r.left + r.width / 2) * DPR / S), cy = Math.round((r.top + r.height / 2) * DPR / S);
+  const k = (now % 4000) / 4000, sweep = Math.sin(k * Math.PI * 2);
+  g.globalAlpha = 0.4; g.fillStyle = '#fff1a8';
+  for (let d = 1; d <= 4; d++) g.fillRect(cx - 30 + Math.round(sweep * 4) + d * 6, cy - 2 - d, 6, 3 + d * 2);
+  g.globalAlpha = 1;
+  drawGuard(cx - 34, cy - 6, 1, now);
+  drawThief(cx + 26, cy - 6, 3, now, true, false);
+}
+
+// ---------------- screens ----------------
+function show(id) {
+  for (const s of ['title', 'levels', 'pause', 'clear', 'ending']) $(s).classList.toggle('hidden', s !== id);
+  const playing = G.mode === 'play' || G.mode === 'pause' || G.mode === 'clear';
+  $('hud').classList.toggle('hidden', !playing); $('ctrl').classList.toggle('hidden', !playing || id !== null);
+  $('cap').classList.toggle('hidden', !playing || id !== null);
+  $('pad').classList.toggle('hidden', !touch || G.mode !== 'play' || id !== null);
+  if (id === 'title') refreshTitle();
+}
+function toast(t, col) { const el = $('toast'); el.textContent = t; el.style.color = col || ''; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 1000); }
+function refreshTitle() {
+  for (const p of ['t', 'p']) { $(p + 'Sfx').textContent = 'SFX ' + (save.sfx ? 'ON' : 'OFF'); $(p + 'Music').textContent = 'MUSIC ' + (save.music ? 'ON' : 'OFF'); }
+  $('tPlay').textContent = save.cleared >= 0 && !save.finished ? 'CONTINUE' : 'PLAY';
+  $('tStats').textContent = save.finished ? 'EVERY JOB DONE · ' + save.minutes + ' MINUTES IN TOTAL' : (save.cleared + 1) + ' / ' + HEISTS.length + ' HEISTS';
+}
+function buildGrid() {
+  const gr = $('grid'); gr.innerHTML = '';
+  HEISTS.forEach((d, i) => {
+    const b = document.createElement('button'), locked = i > save.cleared + 1, best = save.best[i];
+    b.innerHTML = `<span class="n">${locked ? '·' : i + 1}</span><span class="t">${locked ? '' : best !== undefined ? best + ' MIN' : d.name.toUpperCase()}</span>`;
+    if (i <= save.cleared) b.classList.add('done');
+    if (locked) b.disabled = true; else b.onclick = () => { SFX.click(); startHeist(i); };
+    gr.appendChild(b);
+  });
+}
+function openPause() { if (G.mode !== 'play') return; held.length = 0; G.mode = 'pause'; refreshTitle(); show('pause'); }
+function resume() { G.mode = 'play'; show(null); last = performance.now(); }
+function heistDone() {
+  const i = G.idx, mins = G.run.loop;
+  save.cleared = Math.max(save.cleared, i); save.minutes += mins;
+  if (save.best[i] === undefined || mins < save.best[i]) save.best[i] = mins; persist();
+  if (G.L.finale) { finish(); return; }
+  const secs = G.st.t / TPS;
+  $('cInfo').innerHTML = `${G.L.name.toUpperCase()}<br>MINUTE ${mins} · ${secs.toFixed(1)} S ON THE CLOCK<br>${G.seen ? 'SEEN ' + G.seen + ' TIME' + (G.seen > 1 ? 'S' : '') : 'NEVER SEEN'}`;
+  $('cNext').textContent = i === HEISTS.length - 2 ? 'THE LAST JOB' : 'NEXT';
+  G.mode = 'clear'; show('clear');
+}
+function finish() {
+  save.finished = true; persist();
+  $('eInfo').innerHTML = `The only guard who ever really saw you coming was you.<br>And in the end, you were the one who held the door.<br><br>${save.minutes} MINUTES OF CRIME IN TOTAL`;
+  G.mode = 'ending'; G.L = null; show('ending');
+}
+const tap = (id, fn) => $(id).addEventListener('click', e => { audio(); SFX.click(); fn(e); });
+tap('tPlay', () => startHeist(save.finished ? 0 : Math.min(save.cleared + 1, HEISTS.length - 1)));
+tap('tLevels', () => { buildGrid(); show('levels'); });
+tap('tSfx', () => { save.sfx = !save.sfx; if (sfxG) sfxG.gain.value = save.sfx ? 1 : 0; persist(); refreshTitle(); });
+tap('tMusic', () => { save.music = !save.music; if (musG) musG.gain.value = save.music ? 0.16 : 0; persist(); refreshTitle(); });
+tap('pSfx', () => $('tSfx').click());
+tap('pMusic', () => $('tMusic').click());
+tap('lBack', () => { G.mode = 'title'; G.L = null; show('title'); });
+tap('bMenu', openPause);
+tap('bRewind', () => { endReq = true; });
+tap('pResume', resume);
+tap('pRestart', () => startHeist(G.idx));
+tap('pLevels', () => { G.mode = 'title'; G.L = null; buildGrid(); show('levels'); });
+tap('pTitle', () => { G.mode = 'title'; G.L = null; show('title'); });
+tap('cRetry', () => startHeist(G.idx));
+tap('cNext', () => startHeist(Math.min(G.idx + 1, HEISTS.length - 1)));
+tap('eLevels', () => { G.mode = 'title'; buildGrid(); show('levels'); });
+tap('eTitle', () => { G.mode = 'title'; show('title'); });
+tap('eBP', () => { location.href = '../index.html'; });
+
+fit(); show('title'); requestAnimationFrame(frame);
+window.__G = G; window.__HE = HE; window.__view = () => ({ S, DPR, ox, oy });
+})();
+</script>
+</body>
+</html>
