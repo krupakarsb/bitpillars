@@ -6,9 +6,17 @@
 <title>BitPillars · tiny pixel games, free in your browser</title>
 <meta name="description" content="BitPillars: tiny pixel games made for fun. Free to play in your browser on phone or desktop. No installs, no ads, no accounts.">
 <meta name="theme-color" content="#0b0a1f">
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="brand/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon-180.png">
+<meta property="og:title" content="BitPillars Games">
+<meta property="og:description" content="Tiny pixel games. Free in your browser.">
+<meta property="og:image" content="https://krupakarsb.github.io/bitpillars/brand/bitpillars-github-banner-1280x640.png">
+<meta property="og:url" content="https://krupakarsb.github.io/bitpillars/">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800;900&family=Silkscreen&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Rubik:wght@400;500;700;800;900&family=Silkscreen&display=swap" rel="stylesheet">
 <style>
   :root {
     --navy:#0b0a1f; --navy2:#13112e; --line:#2a2650; --teal:#5ad6cf; --teal-dk:#2c8f8a;
@@ -22,8 +30,8 @@
   /* ---------- nav ---------- */
   .nav { position:absolute; z-index:3; top:0; left:0; right:0; display:flex; align-items:center; justify-content:space-between;
     padding:28px clamp(20px,6vw,96px); }
-  .logo { display:flex; align-items:center; gap:10px; font-weight:900; font-size:22px; letter-spacing:-.3px; text-decoration:none; }
-  .logo svg { width:26px; height:26px; image-rendering:pixelated; }
+  .logo { display:flex; align-items:center; gap:12px; font-family:'Jersey 10','Silkscreen',monospace; font-size:34px; letter-spacing:2px; line-height:1; color:#f4efe6; text-decoration:none; }
+  .logo img { width:48px; height:48px; image-rendering:pixelated; filter:drop-shadow(0 0 8px rgba(255,207,90,.35)); }
 
   /* ---------- buttons ---------- */
   .btn { display:inline-flex; align-items:center; justify-content:center; font:700 16px 'Rubik',sans-serif; text-decoration:none; cursor:pointer;
@@ -81,6 +89,7 @@
   @media (max-width:700px) {
     .nav { padding:18px 20px; }
     .nav .btn { display:none; }
+    .logo { font-size:28px; } .logo img { width:32px; height:32px; }
     .hero { min-height:auto; flex-direction:column; align-items:stretch; }
     #scene { position:relative; height:62svh; min-height:380px; }
     .shade { background:linear-gradient(0deg, var(--navy) 0%, rgba(11,10,31,.6) 36%, rgba(11,10,31,0) 55%), linear-gradient(180deg, rgba(11,10,31,.55) 0%, rgba(11,10,31,0) 16%); }
@@ -98,12 +107,8 @@
 
 <header class="nav">
   <a class="logo" href="./" aria-label="BitPillars home">
-    <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true">
-      <rect x="1" y="0" width="2" height="3" fill="#5ad6cf"/><rect x="1" y="5" width="2" height="3" fill="#5ad6cf"/>
-      <rect x="5" y="0" width="2" height="2" fill="#e0509e"/><rect x="5" y="4" width="2" height="4" fill="#e0509e"/>
-      <rect x="1" y="0" width="2" height="1" fill="#b6fff9"/><rect x="5" y="4" width="2" height="1" fill="#ffb3d6"/>
-    </svg>
-    BitPillars
+    <img src="brand/favicon.svg" alt="" width="32" height="32">
+    BITPILLARS
   </a>
   <button class="btn ghost small random">Play Random Game</button>
 </header>

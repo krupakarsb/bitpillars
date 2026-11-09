@@ -1,5 +1,7 @@
 # BitPillars
 
+<img src="brand/bitpillars-github-banner-1280x640.png" alt="BitPillars Games" width="100%">
+
 Tiny pixel games, built for fun and free to play in your browser, on a phone or a desktop. No installs, no ads, no accounts.
 
 **[▶ Open BitPillars](https://krupakarsb.github.io/bitpillars/)**
@@ -26,6 +28,10 @@ Every game folder ships a built `index.html`, so GitHub Pages serves it at `krup
 1. Create a folder such as `my-game/` with an `index.html`, a `README.md` and a `docs/thumb.png` (16:10).
 2. In the root `index.html`, copy a game card, point it at the folder, and add the folder to the `GAMES` list (used by "Play Random Game").
 3. Add a row to the table above.
+
+## Brand
+
+Logo, profile pictures, favicons, banner and splash screen live in [`brand/`](brand/). The wordmark is set in Jersey 10 (SIL Open Font License).
 
 ## Contact
 
