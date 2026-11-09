@@ -186,7 +186,7 @@ const GAMES = [
     const cy = tip - gap - orb / 2;
     const spacing = mobile ? orb * 0.95 : Math.min(orb * 1.25, W * 0.17);
     beam.style.top = (cy + orb / 2 + 4) + 'px'; beam.style.height = (tip - cy - orb / 2) + 'px';
-    info.style.top = Math.max(mobile ? 72 : 70, cy - orb / 2 - info.offsetHeight - (mobile ? 30 : 38)) + 'px';
+    info.style.top = Math.max(mobile ? 72 : 70, cy - orb / 2 - info.offsetHeight - (mobile ? 46 : Math.max(60, H * 0.08))) + 'px';
     const arrowY = cy - (mobile ? 23 : 31);
     const ax = mobile ? 10 : Math.max(24, W / 2 - spacing * 2.6 - 80);
     prev.style.left = ax + 'px'; next.style.right = ax + 'px'; prev.style.top = next.style.top = arrowY + 'px';
