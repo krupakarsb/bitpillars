@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>BitPillars · tiny pixel games, free in your browser</title>
-<meta name="description" content="BitPillars: tiny pixel games made for fun. Free to play in your browser on phone or desktop. No installs, no ads, no accounts.">
-<meta name="theme-color" content="#0b0a1f">
+<meta name="description" content="BitPillars Games: tiny pixel games made for fun. Free to play in your browser on phone or desktop. No installs, no ads, no accounts.">
+<meta name="theme-color" content="#1d3340">
 <link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="brand/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="brand/apple-touch-icon-180.png">
@@ -16,362 +16,364 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Rubik:wght@400;500;700;800;900&family=Silkscreen&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Silkscreen&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --navy:#0b0a1f; --navy2:#13112e; --line:#2a2650; --teal:#5ad6cf; --teal-dk:#2c8f8a;
-    --pink:#e0509e; --text:#eef0ff; --muted:#a3a6c8;
-  }
+  :root { --gold:#ffcf5a; --gold-dk:#c97a18; --cream:#f4efe6; --ink:#0b0a1f; --orb:220px; }
   * { box-sizing:border-box; }
-  html { scroll-behavior:smooth; }
-  body { margin:0; background:var(--navy); color:var(--text); font-family:'Rubik',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
-  a { color:inherit; }
+  html, body { margin:0; height:100%; overflow:hidden; background:#1d3340; color:var(--cream);
+    font-family:'Silkscreen',monospace; -webkit-tap-highlight-color:transparent; overscroll-behavior:none; }
+  #wall { position:fixed; inset:0; width:100%; height:100%; image-rendering:pixelated; display:block; }
+  .vignette { position:fixed; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 45%, rgba(8,10,24,.45) 100%),
+               linear-gradient(180deg, rgba(8,10,24,.55) 0%, rgba(8,10,24,0) 22%); }
 
-  /* ---------- nav ---------- */
-  .nav { position:absolute; z-index:3; top:0; left:0; right:0; display:flex; align-items:center; justify-content:space-between;
-    padding:28px clamp(20px,6vw,96px); }
-  .logo { display:flex; align-items:center; gap:12px; font-family:'Jersey 10','Silkscreen',monospace; font-size:34px; letter-spacing:2px; line-height:1; color:#f4efe6; text-decoration:none; }
-  .logo img { width:48px; height:48px; image-rendering:pixelated; filter:drop-shadow(0 0 8px rgba(255,207,90,.35)); }
+  /* ---------- header ---------- */
+  .brand { position:fixed; z-index:5; top:max(18px, env(safe-area-inset-top)); left:clamp(16px,4vw,48px);
+    display:flex; align-items:center; gap:14px; text-decoration:none; color:var(--cream); }
+  .brand img { width:52px; height:52px; border-radius:50%; image-rendering:pixelated;
+    box-shadow:0 0 0 3px var(--gold), 0 0 0 6px rgba(11,10,31,.75), 0 0 24px rgba(255,207,90,.45); }
+  .brand span { font-family:'Jersey 10','Silkscreen',monospace; font-size:40px; letter-spacing:3px; line-height:1;
+    text-shadow:3px 3px 0 rgba(11,10,31,.75); }
+  .links { position:fixed; z-index:5; top:max(26px, env(safe-area-inset-top)); right:clamp(16px,4vw,48px); display:flex; gap:10px; }
+  .chip { font-family:'Silkscreen',monospace; font-size:13px; color:var(--cream); text-decoration:none; padding:9px 12px;
+    background:rgba(11,10,31,.55); box-shadow:inset 0 0 0 2px rgba(255,207,90,.55); backdrop-filter:blur(2px); }
+  .chip:hover { background:rgba(11,10,31,.8); }
 
-  /* ---------- buttons ---------- */
-  .btn { display:inline-flex; align-items:center; justify-content:center; font:700 16px 'Rubik',sans-serif; text-decoration:none; cursor:pointer;
-    padding:16px 30px; border-radius:3px; border:2px solid var(--teal); transition:transform .12s, background .2s, box-shadow .2s; }
-  .btn:active { transform:translateY(2px); }
-  .btn.solid { background:var(--teal); color:var(--navy); box-shadow:0 4px 0 var(--teal-dk); }
-  .btn.solid:hover { background:#7de6df; }
-  .btn.ghost { background:rgba(11,10,31,.55); color:var(--teal); backdrop-filter:blur(2px); }
-  .btn.ghost:hover { background:rgba(90,214,207,.12); }
-  .btn.small { padding:12px 20px; font-size:15px; }
+  /* ---------- game title ---------- */
+  .info { position:fixed; z-index:4; left:50%; transform:translateX(-50%); text-align:center; width:min(92vw,640px); pointer-events:none; }
+  .info > div { transition:opacity .2s; }
+  .info h1 { margin:0; font-family:'Jersey 10','Silkscreen',monospace; font-weight:400; font-size:clamp(44px,6.5vw,78px);
+    letter-spacing:4px; line-height:1; color:var(--cream); text-shadow:4px 4px 0 rgba(11,10,31,.8), 0 0 30px rgba(255,207,90,.35); transition:opacity .2s; }
+  .info p { margin:8px 0 0; font-size:clamp(12px,1.25vw,15px); color:#fff3d6; text-shadow:2px 2px 0 rgba(11,10,31,.8); }
 
-  /* ---------- hero ---------- */
-  .hero { position:relative; min-height:max(620px,100vh); min-height:max(620px,100svh); display:flex; align-items:center; overflow:hidden; }
-  #scene { position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; display:block; }
-  .shade { position:absolute; inset:0; pointer-events:none;
-    background:linear-gradient(90deg, rgba(11,10,31,.92) 0%, rgba(11,10,31,.72) 30%, rgba(11,10,31,0) 58%),
-               linear-gradient(0deg, var(--navy) 0%, rgba(11,10,31,0) 22%); }
-  .hero-in { position:relative; z-index:2; padding:0 clamp(20px,6vw,96px); max-width:680px; }
-  .eyebrow { font-family:'Silkscreen',monospace; color:var(--pink); font-size:14px; letter-spacing:1px; margin-bottom:18px; }
-  h1 { font-weight:900; font-size:clamp(44px,6.4vw,84px); line-height:.98; letter-spacing:-1.5px; margin:0; color:var(--teal);
-    text-shadow:0 4px 0 rgba(0,0,0,.25); }
-  .lede { font-size:clamp(16px,1.35vw,19px); line-height:1.6; color:#d8dbf4; margin:26px 0 34px; max-width:480px; }
-  .cta { display:flex; gap:14px; flex-wrap:wrap; }
+  /* ---------- stage ---------- */
+  .stage { position:fixed; inset:0; z-index:3; }
+  .pedestal { position:absolute; left:50%; bottom:2vh; transform:translateX(-50%); image-rendering:pixelated; pointer-events:none;
+    filter:drop-shadow(0 18px 24px rgba(8,10,24,.55)); animation:bob 5s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { translate:0 0; } 50% { translate:0 -8px; } }
+  .beam { display:none; position:absolute; left:50%; width:10px; transform:translateX(-50%); pointer-events:none;
+    background:linear-gradient(0deg, rgba(255,207,90,.0), rgba(255,207,90,.55)); filter:blur(2px); animation:bob 5s ease-in-out infinite; }
+  .orb { position:absolute; left:0; top:0; width:var(--orb); height:var(--orb); border-radius:50%; padding:0; border:0; cursor:pointer;
+    background:#0b0a1f; overflow:hidden; will-change:transform,opacity;
+    box-shadow:0 0 0 4px rgba(244,239,230,.75), 0 0 0 8px rgba(11,10,31,.6), 0 14px 30px rgba(8,10,24,.5); }
+  .orb img { width:100%; height:100%; object-fit:cover; image-rendering:pixelated; display:block; }
+  .orb.center { box-shadow:0 0 0 6px var(--gold), 0 0 0 10px rgba(11,10,31,.75), 0 0 0 12px var(--gold-dk), 0 0 60px rgba(255,207,90,.6); }
+  .orb.soon { background:radial-gradient(circle at 35% 30%, #3a3466 0%, #17142f 60%, #0b0a1f 100%); }
+  .orb.soon .q { position:absolute; inset:0; display:grid; place-items:center; font-family:'Jersey 10','Silkscreen',monospace;
+    font-size:calc(var(--orb) * .5); color:rgba(255,207,90,.55); text-shadow:4px 4px 0 rgba(0,0,0,.4); }
+  .orb.soon::after { content:""; position:absolute; inset:0; background:repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0 6px, transparent 6px 12px); }
+  .orb.shake { animation:shake .35s; }
+  @keyframes shake { 20%,60% { margin-left:-8px } 40%,80% { margin-left:8px } }
 
-  /* ---------- games ---------- */
-  .games { padding:40px clamp(20px,6vw,96px) 90px; }
-  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:34px 28px; }
-  .intro h2 { font-weight:800; font-size:clamp(28px,2.6vw,36px); line-height:1.15; margin:0 0 14px; letter-spacing:-.5px; }
-  .intro p { color:var(--muted); font-size:16px; line-height:1.6; margin:0; }
-  .card { text-decoration:none; display:block; }
-  .thumb { position:relative; aspect-ratio:16/10; overflow:hidden; border-radius:3px; background:var(--navy2); box-shadow:0 0 0 2px var(--line); }
-  .thumb img { width:100%; height:100%; object-fit:cover; display:block; image-rendering:pixelated; transition:transform .35s; }
-  .card:hover .thumb img { transform:scale(1.05); }
-  .card:hover .thumb { box-shadow:0 0 0 2px var(--teal); }
-  .badge { position:absolute; left:10px; top:10px; font:700 12px 'Rubik',sans-serif; background:var(--teal); color:var(--navy); padding:5px 9px; border-radius:2px; }
-  .play-ico { position:absolute; inset:0; display:grid; place-items:center; opacity:0; transition:opacity .25s; background:rgba(11,10,31,.35); }
-  .card:hover .play-ico { opacity:1; }
-  .play-ico span { font:700 15px 'Rubik',sans-serif; background:var(--navy); color:var(--teal); border:2px solid var(--teal); padding:10px 18px; border-radius:3px; }
-  .meta { margin-top:14px; }
-  .meta b { display:block; font-weight:700; font-size:18px; }
-  .meta span { color:var(--muted); font-size:15px; }
-  .soon .thumb { display:grid; place-items:center; background:
-      repeating-linear-gradient(45deg, #13112e 0 10px, #171436 10px 20px); }
-  .soon .q { font-family:'Silkscreen',monospace; font-size:44px; color:#2f2a5c; }
-  .soon .meta b { color:#8d90b5; }
+  .arrow { position:absolute; z-index:4; width:58px; height:58px; border:0; cursor:pointer; padding:0;
+    background:rgba(11,10,31,.65); box-shadow:inset 0 0 0 3px var(--gold), 0 4px 0 rgba(0,0,0,.35); display:grid; place-items:center; }
+  .arrow:hover { background:rgba(11,10,31,.85); }
+  .arrow:active { transform:translateY(3px); box-shadow:inset 0 0 0 3px var(--gold), 0 1px 0 rgba(0,0,0,.35); }
+  .arrow svg { width:24px; height:24px; image-rendering:pixelated; }
+  .play { position:relative; pointer-events:auto; margin-top:16px; font-family:'Silkscreen',monospace; font-size:17px; font-weight:700;
+    color:var(--ink); background:var(--gold); border:0; padding:13px 22px; cursor:pointer; letter-spacing:1px;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.45), 0 5px 0 var(--gold-dk), 0 0 24px rgba(255,207,90,.45); }
+  .play:active { margin-top:3px; box-shadow:inset 0 0 0 3px rgba(255,255,255,.45), 0 2px 0 var(--gold-dk); }
+  .play[disabled] { background:#6d6789; color:#d8d3ea; box-shadow:inset 0 0 0 3px rgba(255,255,255,.2), 0 5px 0 #3e3a57; cursor:default; }
+  .dots { display:flex; gap:8px; justify-content:center; margin-top:16px; }
+  .dots i { width:9px; height:9px; background:rgba(244,239,230,.45); box-shadow:0 0 0 2px rgba(11,10,31,.5); }
+  .dots i.on { background:var(--gold); }
+  .hint { position:fixed; z-index:4; bottom:max(14px, env(safe-area-inset-bottom)); left:clamp(16px,4vw,48px); font-size:11px; color:rgba(255,243,214,.8); text-shadow:2px 2px 0 rgba(11,10,31,.8); }
+  footer { position:fixed; z-index:4; bottom:max(14px, env(safe-area-inset-bottom)); right:clamp(16px,4vw,48px); font-size:11px; color:rgba(255,243,214,.85);
+    text-shadow:2px 2px 0 rgba(11,10,31,.8); }
+  footer a { color:var(--gold); text-decoration:none; }
+  .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
 
-  /* ---------- footer ---------- */
-  footer { border-top:2px solid var(--line); padding:34px clamp(20px,6vw,96px) 46px; display:flex; flex-wrap:wrap; gap:14px 30px;
-    justify-content:space-between; color:var(--muted); font-size:15px; }
-  footer a { color:var(--teal); text-decoration:none; }
-  footer a:hover { text-decoration:underline; }
-
-  /* ---------- responsive ---------- */
-  @media (max-width:1000px) { .grid { grid-template-columns:repeat(2,1fr); } .intro { grid-column:1 / -1; } }
   @media (max-width:700px) {
-    .nav { padding:18px 20px; }
-    .nav .btn { display:none; }
-    .logo { font-size:28px; } .logo img { width:32px; height:32px; }
-    .hero { min-height:auto; flex-direction:column; align-items:stretch; }
-    #scene { position:relative; height:62svh; min-height:380px; }
-    .shade { background:linear-gradient(0deg, var(--navy) 0%, rgba(11,10,31,.6) 36%, rgba(11,10,31,0) 55%), linear-gradient(180deg, rgba(11,10,31,.55) 0%, rgba(11,10,31,0) 16%); }
-    .hero-in { margin-top:-120px; padding:0 20px 20px; }
-    h1 { font-size:46px; }
-    .lede { margin:18px 0 26px; }
-    .cta .btn { flex:1; padding:15px 10px; font-size:15px; white-space:nowrap; }
-    .grid { grid-template-columns:1fr; gap:28px; }
-    .games { padding-top:44px; }
+    .brand img { width:40px; height:40px; } .brand span { font-size:30px; letter-spacing:2px; }
+    .links { display:none; } .hint { display:none; }
+    .arrow { width:46px; height:46px; } .arrow svg { width:20px; height:20px; }
+    footer { left:0; right:0; text-align:center; }
+    .play { font-size:15px; padding:12px 18px; }
   }
-  @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } .thumb img { transition:none; } }
+  @media (prefers-reduced-motion:reduce) { .pedestal, .beam { animation:none; } }
 </style>
 </head>
 <body>
+<canvas id="wall" aria-hidden="true"></canvas>
+<div class="vignette"></div>
 
-<header class="nav">
-  <a class="logo" href="./" aria-label="BitPillars home">
-    <img src="brand/favicon.svg" alt="" width="32" height="32">
-    BITPILLARS
-  </a>
-  <button class="btn ghost small random">Play Random Game</button>
-</header>
+<a class="brand" href="./" aria-label="BitPillars home">
+  <img src="brand/bitpillars-pfp-256.png" alt="">
+  <span>BITPILLARS</span>
+</a>
+<nav class="links">
+  <a class="chip" href="https://github.com/krupakarsb/bitpillars">GITHUB</a>
+  <button class="chip" id="random" style="border:0;cursor:pointer">RANDOM</button>
+</nav>
 
-<section class="hero">
-  <canvas id="scene" aria-hidden="true"></canvas>
-  <div class="shade"></div>
-  <div class="hero-in">
-    <div class="eyebrow">&gt; insert coin: free</div>
-    <h1>Tiny games.<br>Endless loops.</h1>
-    <p class="lede">Pocket-sized pixel games, built for fun and free to play right here in your browser. No installs, no ads, no accounts. Just one more try.</p>
-    <div class="cta">
-      <a class="btn solid" href="#games">Choose Game</a>
-      <button class="btn ghost random">Play Random Game</button>
-    </div>
-  </div>
-</section>
+<div class="info" id="info"><div aria-live="polite"><h1 id="gTitle">LOOPFALL</h1><p id="gGenre"></p></div><button class="play" id="play">▶ PLAY</button><div class="dots" id="dots"></div></div>
 
-<section class="games" id="games">
-  <div class="grid">
-    <div class="intro">
-      <h2>Choose a game, built one pillar at a time.</h2>
-      <p>Every game here is small, free, and works on a phone. New ones land as they're finished.</p>
-    </div>
+<main class="stage" id="stage">
+  <div class="beam" id="beam"></div>
+  <img class="pedestal" id="pedestal" src="brand/bitpillars-pedestal.svg" alt="">
+  <button class="arrow" id="prev" aria-label="Previous game"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M5 1h1v1H5zM4 2h1v1H4zM3 3h1v2H3zM4 5h1v1H4zM5 6h1v1H5z" fill="#ffcf5a"/><path d="M5 2h1v1H5zM4 3h1v2H4zM5 5h1v1H5z" fill="#fff4c9"/></svg></button>
+  <button class="arrow" id="next" aria-label="Next game"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M2 1h1v1H2zM3 2h1v1H3zM4 3h1v2H4zM3 5h1v1H3zM2 6h1v1H2z" fill="#ffcf5a"/><path d="M2 2h1v1H2zM3 3h1v2H3zM2 5h1v1H2z" fill="#fff4c9"/></svg></button>
+</main>
 
-    <!-- To add a game: copy this <a class="card"> block, point it at the game's folder, and add the folder to GAMES below. -->
-    <a class="card" href="loopfall/">
-      <div class="thumb">
-        <img src="loopfall/docs/thumb.png" alt="LOOPFALL: a pixel puzzle level repeating in every direction" loading="lazy">
-        <span class="badge">NEW</span>
-        <div class="play-ico"><span>Play</span></div>
-      </div>
-      <div class="meta"><b>LOOPFALL</b><span>Gravity Puzzle Game</span></div>
-    </a>
+<div class="hint">scroll · arrows · swipe</div>
+<footer>© 2026 BitPillars · <a href="mailto:bitpillars@gmail.com">bitpillars@gmail.com</a></footer>
 
-    <div class="card soon">
-      <div class="thumb"><span class="q">?</span></div>
-      <div class="meta"><b>Next game</b><span>In the forge</span></div>
-    </div>
-    <div class="card soon">
-      <div class="thumb"><span class="q">?</span></div>
-      <div class="meta"><b>Next game</b><span>In the forge</span></div>
-    </div>
-  </div>
-</section>
-
-<footer>
-  <div>© 2026 BitPillars · made by <a href="https://github.com/krupakarsb">krupakarsb</a></div>
-  <div><a href="https://github.com/krupakarsb/bitpillars">Source on GitHub</a> · <a href="mailto:bitpillars@gmail.com">bitpillars@gmail.com</a></div>
-</footer>
+<ul class="sr"><li><a href="loopfall/index.html">LOOPFALL, a gravity puzzle game</a></li></ul>
 
 <script>
-// ---------- random game ----------
-const GAMES = ['loopfall/'];
-document.querySelectorAll('.random').forEach(b => b.addEventListener('click', () => {
-  location.href = GAMES[Math.floor(Math.random() * GAMES.length)];
-}));
+// ---------------------------------------------------------------- games
+// To add a game: put it in its own folder and add an entry here (img should be a 16:10 screenshot).
+const GAMES = [
+  { title:'LOOPFALL', genre:'Gravity puzzle · 28 levels · endless mode', href:'loopfall/index.html', img:'loopfall/docs/thumb.png' },
+  { title:'???', genre:'Coming soon · stay tuned', soon:true },
+  { title:'???', genre:'Coming soon · stay tuned', soon:true },
+  { title:'???', genre:'Coming soon · stay tuned', soon:true },
+  { title:'???', genre:'Coming soon · stay tuned', soon:true },
+];
 
-// ---------- hero scene: cube pillars rising and hanging, a small friend sitting in the gap ----------
+// ---------------------------------------------------------------- carousel
 (function () {
-  const cv = document.getElementById('scene'), c = cv.getContext('2d');
-  const sky = document.createElement('canvas'), sc = sky.getContext('2d');
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let W = 0, H = 0, mobile = false, cols = [], mids = [], fars = [], flies = [], bits = [], S = 14;
-  let mx = 0.5, my = 0.5;
+  const stage = document.getElementById('stage'), ped = document.getElementById('pedestal'), beam = document.getElementById('beam');
+  const prev = document.getElementById('prev'), next = document.getElementById('next'), play = document.getElementById('play');
+  const info = document.getElementById('info'), infoText = info.firstElementChild, gTitle = document.getElementById('gTitle'), gGenre = document.getElementById('gGenre');
+  const dotsEl = document.getElementById('dots');
+  const N = GAMES.length;
+  let c = 0, target = 0, shown = -1, geo = null;
 
-  const hash = (a, b) => { let h = a * 374761393 + b * 668265263; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0); };
-  const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  const orbs = GAMES.map((g, i) => {
+    const b = document.createElement('button');
+    b.className = 'orb' + (g.soon ? ' soon' : '');
+    b.setAttribute('aria-label', g.soon ? 'Coming soon' : g.title);
+    b.innerHTML = g.soon ? '<span class="q">?</span>' : `<img src="${g.img}" alt="">`;
+    b.addEventListener('click', () => {
+      const d = wrapDist(i, c);
+      if (Math.abs(d) < 0.5) launch(); else go(target + Math.round(d));
+    });
+    stage.appendChild(b);
+    const dot = document.createElement('i'); dotsEl.appendChild(dot);
+    return b;
+  });
+  const dots = [...dotsEl.children];
 
-  function buildSky() {
-    sky.width = W; sky.height = H;
-    const img = sc.createImageData(W, H), d = img.data;
-    const stops = [[0, '#2a1046'], [0.22, '#5c1c66'], [0.45, '#a33a8c'], [0.62, '#7a4a92'], [0.78, '#2f5a72'], [0.9, '#183048'], [1, '#0b0a1f']].map(s => [s[0], hex(s[1])]);
-    const pink = hex('#ef63b4');
-    const moon = { x: W * (mobile ? 0.26 : 0.36), y: H * (mobile ? 0.17 : 0.2), r: Math.min(W, H) * (mobile ? 0.17 : 0.2) };
-    for (let y = 0; y < H; y++) {
-      const t = y / H;
-      let k = 0; while (k < stops.length - 2 && stops[k + 1][0] < t) k++;
-      const a = stops[k], b = stops[k + 1], f = (t - a[0]) / (b[0] - a[0]);
-      const base = [0, 1, 2].map(i => a[1][i] + (b[1][i] - a[1][i]) * f);
-      for (let x = 0; x < W; x++) {
-        const glow = Math.max(0, x / W - 0.35) * 0.55 * Math.max(0, 1 - Math.abs(t - 0.38) * 2.4);
-        let col = base.map((v, i) => v + (pink[i] - v) * glow);
-        const dx = x - moon.x, dy = y - moon.y, dist = Math.hypot(dx, dy);
-        if (dist < moon.r * 1.9) { const h = Math.max(0, 1 - dist / (moon.r * 1.9)) * 0.22; col = col.map(v => v + (255 - v) * h); }
-        if (dist < moon.r) {
-          const shade = 0.9 - (dx + dy) / (moon.r * 6);
-          col = [232, 200, 222].map(v => v * shade);
-          const cr = hash(Math.floor(x / 3), Math.floor(y / 3)) % 17 === 0; if (cr) col = col.map(v => v * 0.9);
-        }
-        const th = (BAYER[(y & 3) * 4 + (x & 3)] / 16 - 0.5) * 14;
-        const o = (y * W + x) * 4;
-        for (let i = 0; i < 3; i++) d[o + i] = Math.max(0, Math.min(255, Math.round((col[i] + th) / 10) * 10));
-        d[o + 3] = 255;
-      }
-    }
-    sc.putImageData(img, 0, 0);
+  function wrapDist(i, cc) { let d = ((i - cc) % N + N) % N; if (d > N / 2) d -= N; return d; }
+  function go(t) { target = t; }
+  function cur() { return ((Math.round(target) % N) + N) % N; }
+  function launch() {
+    const g = GAMES[cur()];
+    if (g.soon) { const o = orbs[cur()]; o.classList.remove('shake'); void o.offsetWidth; o.classList.add('shake'); return; }
+    location.href = g.href;
   }
 
   function layout() {
-    const r = cv.getBoundingClientRect();
-    mobile = r.width < 700;
-    const px = mobile ? 3 : 4;
-    W = Math.max(60, Math.ceil(r.width / px)); H = Math.max(60, Math.ceil(r.height / px));
-    cv.width = W; cv.height = H;
-    S = Math.max(9, Math.min(17, Math.round(H * 0.07)));
-    // front pillars: bot = where a rising pillar's top surface sits, top = where a hanging pillar ends (fractions of height)
-    const cfg = mobile
-      ? [{ x: .06, bot: .64, top: .14 }, { x: .27, bot: .78, top: null }, { x: .52, bot: .56, top: .24, hero: true }, { x: .76, bot: .7, top: .3 }, { x: .95, bot: .6, top: .1 }]
-      : [{ x: .04, bot: .72, top: .2 }, { x: .17, bot: .84, top: null }, { x: .31, bot: .9, top: .3 }, { x: .46, bot: .76, top: .12 },
-         { x: .64, bot: .6, top: .27, hero: true }, { x: .81, bot: .74, top: .17 }, { x: .95, bot: .64, top: .4 }];
-    cols = cfg.map((k, i) => ({ ...k, X: Math.round(k.x * W - S / 2), ph: i * 1.7 }));
-    const mk = (n, size, seed) => Array.from({ length: n }, (_, i) => {
-      const h = hash(i, seed);
-      return { x: (i + 0.5) / n + ((h % 100) / 100 - 0.5) * 0.06, bot: 0.45 + (h % 37) / 100, top: (h >> 7) % 3 ? 0.08 + ((h >> 9) % 30) / 100 : null, s: size, w: 1 + ((h >> 4) % 2) };
+    const W = innerWidth, H = innerHeight, mobile = W < 700;
+    const pedH = Math.min(mobile ? H * 0.38 : H * 0.46, 440, W * (mobile ? 0.95 : 0.6));
+    ped.style.height = pedH + 'px'; ped.style.width = pedH + 'px';
+    const orb = Math.round(Math.max(130, Math.min(mobile ? W * 0.44 : 250, H * 0.27)));
+    document.documentElement.style.setProperty('--orb', orb + 'px');
+    const pedTop = H - H * 0.02 - pedH;
+    const obeliskTop = pedTop + pedH * (9 / 64);             // tip of the obelisk inside the art
+    const cy = obeliskTop - orb / 2 + orb * 0.05;
+    const spacing = mobile ? orb * 0.95 : Math.min(orb * 1.25, W * 0.17);
+    beam.style.top = (cy + orb / 2) + 'px'; beam.style.height = (obeliskTop - cy - orb / 2 + pedH * 0.04) + 'px';
+    info.style.top = Math.max(mobile ? 72 : 70, cy - orb / 2 - info.offsetHeight - (mobile ? 34 : 42)) + 'px';
+    const arrowY = cy - (mobile ? 23 : 29);
+    const ax = mobile ? 10 : Math.max(24, W / 2 - spacing * 2.6 - 80);
+    prev.style.left = ax + 'px'; next.style.right = ax + 'px'; prev.style.top = next.style.top = arrowY + 'px';
+    geo = { W, cy, orb, spacing, mobile };
+  }
+
+  function frame() {
+    requestAnimationFrame(frame);
+    if (!geo) return;
+    c += (target - c) * 0.16;
+    if (Math.abs(target - c) < 0.001) c = target;
+    const { W, cy, orb, spacing, mobile } = geo;
+    orbs.forEach((o, i) => {
+      const d = wrapDist(i, c), ad = Math.abs(d);
+      const s = ad < 1 ? 1 - 0.45 * ad : Math.max(0.3, 0.55 - 0.1 * (ad - 1));
+      const x = W / 2 + Math.sign(d) * (ad < 1 ? ad * spacing : spacing + (ad - 1) * spacing * 0.78);
+      const y = cy + Math.min(ad, 1) * orb * 0.42 + Math.max(0, ad - 1) * orb * 0.06;
+      const vis = mobile ? 1.6 : 2.6;
+      o.style.transform = `translate(${x - orb / 2}px, ${y - orb / 2}px) scale(${s})`;
+      o.style.opacity = ad > vis ? 0 : ad > vis - 0.6 ? (vis - ad) / 0.6 : ad < 0.5 ? 1 : 0.92;
+      o.style.zIndex = 100 - Math.round(ad * 10);
+      o.style.pointerEvents = ad > vis ? 'none' : 'auto';
+      o.classList.toggle('center', ad < 0.5);
+      o.style.filter = ad < 0.5 ? 'none' : `brightness(${Math.max(0.55, 0.95 - ad * 0.15)})`;
     });
-    mids = mk(mobile ? 6 : 10, Math.round(S * 0.62), 11);
-    fars = mk(mobile ? 8 : 14, Math.round(S * 0.38), 29);
-    flies = Array.from({ length: mobile ? 22 : 40 }, (_, i) => ({ x: (hash(i, 3) % 1000) / 1000 * W, y: H * 0.15 + (hash(i, 5) % 1000) / 1000 * H * 0.7, p: (hash(i, 7) % 628) / 100, warm: hash(i, 9) % 6 === 0 }));
-    bits = Array.from({ length: mobile ? 6 : 10 }, (_, i) => ({ x: (hash(i, 13) % 1000) / 1000 * W, y: (hash(i, 17) % 1000) / 1000 * H, v: 2 + (hash(i, 19) % 5), s: 2 + (hash(i, 23) % 3), up: i % 2 === 0 }));
-    buildSky();
-  }
-
-  // a single stone cube
-  function cube(x, y, s, P, seed, t) {
-    c.fillStyle = P.face; c.fillRect(x, y, s, s);
-    c.fillStyle = P.top; c.fillRect(x, y, s, 2);
-    c.fillStyle = P.lite; c.fillRect(x, y + 2, 1, s - 2);
-    c.fillStyle = P.dark; c.fillRect(x + s - 1, y + 1, 1, s - 1); c.fillRect(x, y + s - 1, s, 1);
-    const h = hash(seed, 77);
-    c.fillStyle = P.crack;
-    c.fillRect(x + 2 + h % (s - 5), y + 4 + (h >> 4) % (s - 7), 1, 2 + (h >> 8) % 3);
-    if (P.rune && h % 5 === 0) {
-      const g = 0.55 + 0.45 * Math.sin(t * 2 + seed);
-      c.globalAlpha = g; c.fillStyle = '#5ad6cf';
-      const cx = x + (s >> 1), cy = y + (s >> 1) + 1;
-      c.fillRect(cx - 1, cy - 2, 2, 1); c.fillRect(cx - 2, cy - 1, 1, 2); c.fillRect(cx + 1, cy - 1, 1, 2); c.fillRect(cx - 1, cy + 1, 2, 1);
-      c.globalAlpha = 1;
-    }
-  }
-  const FRONT = { face: '#1f3a52', top: '#3f8090', lite: '#2b5670', dark: '#0f1e33', crack: '#152b40', rune: true };
-  const FAR = { face: '#4b2c6d', top: '#64408c', lite: '#553478', dark: '#3e235b', crack: '#46296a' };
-  const MID = { face: '#2c2754', top: '#4a3f7e', lite: '#363066', dark: '#1d1940', crack: '#25204a' };
-
-  function pillar(X, botY, topY, s, P, seed, t, deco) {
-    // rising stack
-    if (botY != null) {
-      for (let k = 0, y = botY; y < H + s; k++, y += s) {
-        const j = k === 0 || deco === 'hero' ? 0 : (hash(seed, k) % 3) - 1;
-        cube(X + j, y, s, P, seed * 31 + k, t);
-      }
-      if (deco) { // moss + flowers on top
-        c.fillStyle = '#2e7a64'; c.fillRect(X, botY - 1, s, 2);
-        c.fillStyle = '#49a383'; for (let i = 0; i < s; i += 2) if (hash(seed, i) % 3) c.fillRect(X + i, botY - 2, 1, 1);
-        c.fillStyle = '#ff5fa2'; for (let i = 1; i < s - 1; i += 3) if (hash(seed, i + 9) % 2) { c.fillRect(X + i, botY - 3, 1, 1); }
-        c.fillStyle = '#2e7a64'; for (let i = 0; i < s; i += 3) if (hash(seed, i + 40) % 2) c.fillRect(X + i, botY + 1, 1, 2 + hash(seed, i) % 3);
-      }
-    }
-    // hanging stack
-    if (topY != null) {
-      for (let k = 0, y = topY - s; y > -s * 2; k++, y -= s) {
-        const j = k === 0 ? 0 : (hash(seed + 5, k) % 3) - 1;
-        cube(X + j, y, s, P, seed * 17 + k + 300, t);
-      }
-      if (deco) { // vines
-        for (let i = 1; i < s - 1; i += 2) {
-          const h = hash(seed + 99, i); if (h % 3 === 0) continue;
-          const len = 2 + h % 7, sway = Math.round(Math.sin(t * 1.3 + i + seed) * 0.6);
-          c.fillStyle = '#2e7a64'; c.fillRect(X + i + sway, topY, 1, len);
-          if (h % 4 === 0) { c.fillStyle = '#ff5fa2'; c.fillRect(X + i + sway, topY + len, 1, 1); }
-        }
-      }
+    const k = cur();
+    if (k !== shown) {
+      shown = k; const g = GAMES[k];
+      infoText.style.opacity = 0;
+      setTimeout(() => { gTitle.textContent = g.title; gGenre.textContent = g.genre; infoText.style.opacity = 1; }, 120);
+      play.textContent = g.soon ? 'IN THE FORGE' : '▶ PLAY'; play.disabled = !!g.soon;
+      dots.forEach((dd, j) => dd.classList.toggle('on', j === k));
     }
   }
 
-  function friend(x, y, t) {
-    // the LOOPFALL cube buddy, sitting with legs over the edge
-    const blink = (t % 4.2) < 0.13, look = Math.sin(t * 0.23) > 0.75 ? -1 : 0;
-    const sw = Math.sin(t * 2.4) > 0 ? 1 : 0;
-    c.fillStyle = '#fff3dc';
-    c.fillRect(x + 1, y - 8, 6, 8); c.fillRect(x, y - 7, 8, 6);
-    c.fillStyle = '#ffc37a'; c.fillRect(x + 1, y - 1, 6, 1);
-    c.fillStyle = '#e8d5b8'; c.fillRect(x + 2, y, 1, 2 + sw); c.fillRect(x + 5, y, 1, 3 - sw);
-    c.fillStyle = '#2a1a3a';
-    const ey = y - 5 + look;
-    c.fillRect(x + 2, ey + (blink ? 1 : 0), 1, blink ? 1 : 2); c.fillRect(x + 5, ey + (blink ? 1 : 0), 1, blink ? 1 : 2);
-    c.fillStyle = '#ff9eb8'; c.globalAlpha = 0.6; c.fillRect(x + 1, y - 3, 1, 1); c.fillRect(x + 6, y - 3, 1, 1); c.globalAlpha = 1;
-  }
-  function lantern(x, y, t) {
-    const f = 0.85 + 0.15 * Math.sin(t * 9) * Math.sin(t * 3.7);
-    for (const [r, a] of [[16, 0.05], [11, 0.07], [7, 0.1]]) { c.globalAlpha = a * f; c.fillStyle = '#ffb347'; c.fillRect(x - r + 1, y - 6 - r, r * 2, r * 2); }
-    c.globalAlpha = 1;
-    c.fillStyle = '#3a2a44'; c.fillRect(x, y - 4, 1, 4); c.fillRect(x - 1, y - 10, 4, 1);
-    c.fillStyle = '#ffb347'; c.fillRect(x - 1, y - 9, 3, 5);
-    c.fillStyle = '#fff1c1'; c.globalAlpha = f; c.fillRect(x, y - 8, 1, 3); c.globalAlpha = 1;
-  }
+  prev.onclick = () => go(target - 1);
+  next.onclick = () => go(target + 1);
+  play.onclick = launch;
+  document.getElementById('random').onclick = () => { const ready = GAMES.filter(g => !g.soon); location.href = ready[Math.floor(Math.random() * ready.length)].href; };
+  let acc = 0, last = 0;
+  addEventListener('wheel', e => {
+    e.preventDefault();
+    acc += Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    const now = performance.now();
+    if (Math.abs(acc) > 40 && now - last > 220) { go(target + Math.sign(acc)); acc = 0; last = now; }
+  }, { passive:false });
+  let tx = null;
+  addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive:true });
+  addEventListener('touchend', e => { if (tx == null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 40) go(target + (dx < 0 ? 1 : -1)); tx = null; });
+  addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') go(target + 1);
+    else if (e.key === 'ArrowLeft') go(target - 1);
+    else if (e.key === 'Enter' && document.activeElement === document.body) launch();
+  });
+  addEventListener('resize', layout);
+  ped.complete ? layout() : ped.addEventListener('load', layout); layout();
+  requestAnimationFrame(frame);
+})();
 
-  // stepped fog: alpha builds up in bands between y0 and y1 (fractions of height)
-  function fog(y0, y1, col, maxA) {
-    const n = 7; c.fillStyle = col; c.globalAlpha = maxA / n;
-    for (let i = 0; i < n; i++) c.fillRect(0, Math.round(H * (y0 + (y1 - y0) * i / n)), W, H);
-    c.globalAlpha = 1;
-  }
-  function frame(ms) {
-    const t = ms / 1000;
-    const pxo = (mx - 0.5), pyo = (my - 0.5);
-    c.drawImage(sky, 0, 0);
-    // far silhouettes (slow drift, wrap around)
-    const drawLayer = (L, P, speed, par, alpha) => {
-      const off = (t * speed + pxo * par) % W;
-      c.globalAlpha = alpha;
-      for (const p of L) {
-        let X = Math.round(p.x * W - off); if (X < -p.s * 2) X += W + p.s * 2; if (X > W) X -= W + p.s * 2;
-        const by = Math.round(p.bot * H + pyo * par * 0.5), ty = p.top != null ? Math.round(p.top * H + pyo * par * 0.5) : null;
-        for (let k = 0; k < p.w; k++) {
-          pillar(X + k * p.s, by, ty, p.s, P, ((p.x * 1000) | 0) + k, t, null);
-        }
+// ---------------------------------------------------------------- live wallpaper: pixel cherry-blossom forest
+(function () {
+  const cv = document.getElementById('wall'), g = cv.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W, H, PX, layers = [], petals = [], motes = [], mx = 0.5;
+  const hash = (a, b) => { let h = a * 374761393 + b * 668265263; h = (h ^ (h >>> 13)) * 1274126177; return (h ^ (h >>> 16)) >>> 0; };
+  const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  const hex = s => [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16));
+
+  function sky(c) {
+    const x = c.getContext('2d'), img = x.createImageData(c.width, c.height), d = img.data;
+    const stops = [[0, '#1d3340'], [0.25, '#2f5a63'], [0.5, '#5f9a92'], [0.66, '#9fcfbf'], [0.78, '#b8dcc8'], [1, '#6f9e7c']].map(s => [s[0], hex(s[1])]);
+    for (let y = 0; y < c.height; y++) {
+      const t = y / c.height; let k = 0; while (k < stops.length - 2 && stops[k + 1][0] < t) k++;
+      const a = stops[k], b = stops[k + 1], f = (t - a[0]) / (b[0] - a[0]);
+      for (let xx = 0; xx < c.width; xx++) {
+        const th = (BAY[(y & 3) * 4 + (xx & 3)] / 16 - 0.5) * 12, o = (y * c.width + xx) * 4;
+        for (let i = 0; i < 3; i++) d[o + i] = Math.round((a[1][i] + (b[1][i] - a[1][i]) * f + th) / 8) * 8;
+        d[o + 3] = 255;
       }
-      c.globalAlpha = 1;
-    };
-    drawLayer(fars, FAR, reduce ? 0 : 1.2, 3, 0.7);
-    // haze between layers
-    fog(0.42, 0.72, '#7ad0d6', 0.22);
-    drawLayer(mids, MID, reduce ? 0 : 2.6, 6, 1);
-    fog(0.6, 0.85, '#5ad6cf', 0.14);
-    // floating bits that loop forever
-    for (const b of bits) {
-      const y = ((b.y + (b.up ? -1 : 1) * t * b.v * (reduce ? 0 : 1)) % (H + 10) + H + 10) % (H + 10) - 5;
-      c.fillStyle = '#3f8090'; c.fillRect(Math.round(b.x), Math.round(y), b.s, b.s);
-      c.fillStyle = '#7fd3d6'; c.fillRect(Math.round(b.x), Math.round(y), b.s, 1);
     }
-    // front pillars
-    let hero = null;
-    for (const p of cols) {
-      const bob = reduce ? 0 : Math.round(Math.sin(t * 0.7 + p.ph) * 1.3);
-      const bobT = reduce ? 0 : Math.round(Math.sin(t * 0.7 + p.ph + 2) * 1.3);
-      const X = p.X + Math.round(pxo * -10);
-      const by = Math.round(p.bot * H) + bob + Math.round(pyo * -4), ty = p.top != null ? Math.round(p.top * H) + bobT + Math.round(pyo * -4) : null;
-      pillar(X, by, ty, S, FRONT, Math.round(p.x * 100), t, p.hero ? 'hero' : 'moss');
-      if (p.hero) hero = { X, by };
+    x.putImageData(img, 0, 0);
+  }
+  function blob(x, cx, cy, r, cols, seed) {     // dithered canopy cluster
+    for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let xx = Math.floor(cx - r * 1.4); xx <= cx + r * 1.4; xx++) {
+      const dx = (xx - cx) / 1.4, dy = y - cy, d = Math.sqrt(dx * dx + dy * dy) + (hash(xx, y + seed) % 3) * 0.5;
+      if (d > r) continue;
+      let c = cols[1];
+      if (dy < -r * 0.35 && dx < r * 0.3) c = cols[0];
+      if (dy > r * 0.35 || (dx > r * 0.5 && dy > 0)) c = cols[2];
+      if (d > r - 1.5 && (xx + y) % 2) continue;
+      if (hash(xx, y + seed * 7) % 23 === 0) c = cols[0];
+      x.fillStyle = c; x.fillRect(xx, y, 1, 1);
     }
-    if (hero) {
-      friend(hero.X + Math.round(S / 2) - 6, hero.by - 1, t);
-      lantern(hero.X + S - 3, hero.by - 1, t);
+  }
+  function trunk(x, x0, w, y0, y1, cols, seed) {
+    for (let y = y0; y < y1; y++) {
+      const sway = Math.round(Math.sin(y / 23 + seed) * 1.2);
+      for (let i = 0; i < w; i++) {
+        let c = i === 0 ? cols[0] : i >= w - 1 ? cols[2] : cols[1];
+        if (w > 4 && hash(x0 + i, y + seed) % 13 === 0) c = cols[2];
+        x.fillStyle = c; x.fillRect(x0 + i + sway, y, 1, 1);
+      }
     }
-    // fireflies
-    for (const f of flies) {
-      const x = Math.round(f.x + Math.sin(t * 0.5 + f.p) * 8 + pxo * -6), y = Math.round(f.y + Math.cos(t * 0.37 + f.p * 2) * 6);
-      const b = (Math.sin(t * 1.6 + f.p * 3) + 1) / 2;
-      if (b < 0.25) continue;
-      c.globalAlpha = b; c.fillStyle = f.warm ? '#ffd38a' : '#7ff3e0'; c.fillRect(x, y, 1, 1);
-      if (b > 0.85) { c.globalAlpha = 0.35; c.fillRect(x - 1, y, 3, 1); c.fillRect(x, y - 1, 1, 3); }
+  }
+  function build() {
+    const r = cv.getBoundingClientRect();
+    PX = r.width < 700 ? 3 : 4;
+    W = Math.ceil(r.width / PX); H = Math.ceil(r.height / PX);
+    cv.width = W; cv.height = H;
+    const pad = 12, LW = W + pad * 2;
+    const ground = Math.round(H * 0.8);
+    // layer 0: sky
+    const L0 = mk(W, H); sky(L0);
+    // layer 1: far misty trunks + canopy
+    const L1 = mk(LW, H), x1 = L1.getContext('2d');
+    for (let i = 0; i < LW; i += 9 + (hash(i, 1) % 7)) trunk(x1, i, 2 + hash(i, 2) % 2, Math.round(H * 0.15), ground, ['#a9d3c6', '#8fbcb0', '#7faea3'], i);
+    for (let i = -10; i < LW + 10; i += 14) blob(x1, i + hash(i, 3) % 8, H * 0.08 + hash(i, 4) % Math.round(H * 0.1), 9 + hash(i, 5) % 6, ['#f2cbdc', '#ddb0c6', '#c79ab3'], i);
+    // layer 2: mid trunks + blossoms
+    const L2 = mk(LW, H), x2 = L2.getContext('2d');
+    for (let i = 4; i < LW; i += 22 + (hash(i, 6) % 14)) {
+      if (Math.abs(i - pad - W / 2) < W * 0.14) continue;   // keep the middle open for the pillar
+      trunk(x2, i, 4 + hash(i, 7) % 3, Math.round(H * 0.12), ground + 2, ['#7b9a90', '#58766f', '#44605c'], i);
     }
-    c.globalAlpha = 1;
-    // ground fog
-    for (let i = 0; i < 6; i++) { c.globalAlpha = 0.07 + i * 0.03; c.fillStyle = i < 3 ? '#3a8a9a' : '#0b0a1f'; c.fillRect(0, Math.round(H * (0.8 + i * 0.035)), W, H); }
-    c.globalAlpha = 1;
+    for (let i = -8; i < LW + 8; i += 18) blob(x2, i + hash(i, 8) % 10, H * 0.05 + hash(i, 9) % Math.round(H * 0.13), 11 + hash(i, 10) % 7, ['#ffc6de', '#f095bf', '#c96a98'], i + 50);
+    // layer 3: ground, near trunks at the edges, foreground bushes
+    const L3 = mk(LW, H), x3 = L3.getContext('2d');
+    for (let xx = 0; xx < LW; xx++) {
+      const top = ground + Math.round(Math.sin(xx / 17) * 2 + Math.sin(xx / 7) * 1);
+      for (let y = top; y < H; y++) {
+        let c = y < top + 2 ? '#8dbb5a' : y < top + 6 ? '#6c9b45' : '#4e7a36';
+        if ((xx + y) % 2 && y === top + 6) c = '#6c9b45';
+        if (hash(xx, y) % 37 === 0) c = ['#ffb3d1', '#ff8fbf', '#ffd6ea'][hash(xx, y) % 3];
+        x3.fillStyle = c; x3.fillRect(xx, y, 1, 1);
+      }
+    }
+    const nearW = Math.max(10, Math.round(W * 0.035));
+    for (const side of [0, 1]) {
+      const x0 = side ? LW - nearW - 6 : 6;
+      trunk(x3, x0, nearW, 0, H, ['#4a5a5c', '#2d393c', '#1f282b'], side * 9);
+      blob(x3, side ? LW - 10 : 10, H * 0.06, Math.max(16, W * 0.07), ['#ffd6ea', '#ff9ec7', '#d4679a'], side + 3);
+      blob(x3, side ? LW - 34 : 34, H * 0.16, Math.max(12, W * 0.05), ['#ffd6ea', '#ff9ec7', '#d4679a'], side + 5);
+    }
+    for (let i = 0; i < LW; i += 6) {
+      const bh = 3 + hash(i, 12) % 6;
+      for (let y = H - bh; y < H; y++) for (let k = 0; k < 7; k++) {
+        if (hash(i + k, y) % 5 === 0) continue;
+        x3.fillStyle = (y === H - bh) ? '#3f6a33' : '#2b4a27'; x3.fillRect(i + k, y, 1, 1);
+      }
+      if (hash(i, 13) % 3 === 0) { x3.fillStyle = '#ff9ec7'; x3.fillRect(i + 2, H - bh - 1, 1, 1); x3.fillStyle = '#ffd6ea'; x3.fillRect(i + 3, H - bh, 1, 1); }
+    }
+    layers = [[L0, 0], [L1, 2], [L2, 5], [L3, 10]];
+    const n = Math.round(W * H / (PX === 3 ? 260 : 420));
+    petals = Array.from({ length: n }, () => newPetal(true));
+    motes = Array.from({ length: 24 }, () => ({ x: Math.random() * W, y: Math.random() * H * 0.8, p: Math.random() * 6.28 }));
+  }
+  function newPetal(anywhere) {
+    return { x: Math.random() * (W + 40) - 20, y: anywhere ? Math.random() * H : -4 - Math.random() * 20,
+      vy: 4 + Math.random() * 7, vx: 2 + Math.random() * 4, p: Math.random() * 6.28, s: Math.random(),
+      c: ['#ffb3d1', '#ff8fbf', '#ffd6ea', '#ffc6de'][Math.floor(Math.random() * 4)] };
+  }
+  let lastT = performance.now();
+  function frame(t) {
+    const dt = Math.min(0.05, (t - lastT) / 1000); lastT = t;
+    for (const [L, par] of layers) {
+      const off = par ? Math.round((mx - 0.5) * -par) - 12 : 0;
+      g.drawImage(L, off, 0);
+    }
+    // light shafts
+    const rays = [[0.16, 9], [0.33, 14], [0.52, 7], [0.68, 12], [0.84, 9]];
+    for (let i = 0; i < rays.length; i++) {
+      const [fx, w] = rays[i], a = 0.07 + 0.04 * Math.sin(t / 1400 + i * 1.7);
+      g.fillStyle = `rgba(255,246,224,${reduce ? 0.08 : a})`;
+      g.beginPath(); const x0 = fx * W - H * 0.35;
+      g.moveTo(x0, 0); g.lineTo(x0 + w, 0); g.lineTo(x0 + w + H * 0.55 + w * 2, H * 0.85); g.lineTo(x0 + H * 0.55, H * 0.85); g.closePath(); g.fill();
+    }
+    // floating motes in the light
+    for (const m of motes) {
+      const b = (Math.sin(t / 700 + m.p) + 1) / 2; if (b < 0.4) continue;
+      g.fillStyle = `rgba(255,243,214,${b * 0.8})`;
+      g.fillRect(Math.round(m.x + Math.sin(t / 2000 + m.p) * 4), Math.round(m.y + Math.cos(t / 2600 + m.p) * 3), 1, 1);
+    }
+    // falling petals
+    for (const p of petals) {
+      if (!reduce) { p.y += p.vy * dt; p.x += (p.vx + Math.sin(t / 900 + p.p) * 6) * dt; }
+      if (p.y > H + 2 || p.x > W + 20) Object.assign(p, newPetal(false));
+      const flip = Math.sin(t / 260 + p.p * 3) > 0;
+      g.fillStyle = p.c;
+      const X = Math.round(p.x), Y = Math.round(p.y);
+      if (p.s > 0.6) { g.fillRect(X, Y, flip ? 2 : 1, flip ? 1 : 2); }
+      else g.fillRect(X, Y, 1, 1);
+    }
     if (!reduce || !frame.once) { frame.once = true; requestAnimationFrame(frame); }
   }
-  addEventListener('pointermove', e => { if (e.pointerType === 'mouse') { mx = e.clientX / innerWidth; my = e.clientY / innerHeight; } });
-  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(layout, 120); });
-  layout(); requestAnimationFrame(frame);
+  addEventListener('pointermove', e => { if (e.pointerType === 'mouse') mx = e.clientX / innerWidth; });
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { build(); if (reduce) requestAnimationFrame(frame); }, 150); });
+  build(); requestAnimationFrame(frame);
 })();
 </script>
 </body>

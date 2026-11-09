@@ -17,7 +17,8 @@ Tiny pixel games, built for fun and free to play in your browser, on a phone or 
 ## Layout
 
 ```
-index.html        landing page: animated pixel hero + game grid
+index.html        landing page: game orbs on the pillar, live pixel forest
+brand/            logo, profile pictures, favicons, banner, splash
 loopfall/         one folder per game, each with its own README and built index.html
 ```
 
@@ -26,7 +27,7 @@ Every game folder ships a built `index.html`, so GitHub Pages serves it at `krup
 ## Adding a game
 
 1. Create a folder such as `my-game/` with an `index.html`, a `README.md` and a `docs/thumb.png` (16:10).
-2. In the root `index.html`, copy a game card, point it at the folder, and add the folder to the `GAMES` list (used by "Play Random Game").
+2. Add an entry to the `GAMES` list at the top of the script in the root `index.html`. It appears as a new orb in the carousel; replace one of the "coming soon" entries.
 3. Add a row to the table above.
 
 ## Brand
