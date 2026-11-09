@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>BitPillars · tiny pixel games, free in your browser</title>
 <meta name="description" content="BitPillars Games: tiny pixel games made for fun. Free to play in your browser on phone or desktop. No installs, no ads, no accounts.">
-<meta name="theme-color" content="#1d3340">
+<meta name="theme-color" content="#070818">
 <link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="brand/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="brand/apple-touch-icon-180.png">
@@ -20,12 +20,11 @@
 <style>
   :root { --gold:#ffcf5a; --gold-dk:#c97a18; --cream:#f4efe6; --ink:#0b0a1f; --orb:220px; }
   * { box-sizing:border-box; }
-  html, body { margin:0; height:100%; overflow:hidden; background:#1d3340; color:var(--cream);
+  html, body { margin:0; height:100%; overflow:hidden; background:#070818; color:var(--cream);
     font-family:'Silkscreen',monospace; -webkit-tap-highlight-color:transparent; overscroll-behavior:none; }
   #wall { position:fixed; inset:0; width:100%; height:100%; image-rendering:pixelated; display:block; }
   .vignette { position:fixed; inset:0; pointer-events:none;
-    background:radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 45%, rgba(8,10,24,.45) 100%),
-               linear-gradient(180deg, rgba(8,10,24,.55) 0%, rgba(8,10,24,0) 22%); }
+    background:radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 50%, rgba(4,5,16,.55) 100%); }
 
   /* ---------- header ---------- */
   .brand { position:fixed; z-index:5; top:max(18px, env(safe-area-inset-top)); left:clamp(16px,4vw,48px);
@@ -42,17 +41,16 @@
   /* ---------- game title ---------- */
   .info { position:fixed; z-index:4; left:50%; transform:translateX(-50%); text-align:center; width:min(92vw,640px); pointer-events:none; }
   .info > div { transition:opacity .2s; }
-  .info h1 { margin:0; font-family:'Jersey 10','Silkscreen',monospace; font-weight:400; font-size:clamp(44px,6.5vw,78px);
+  .info h1 { margin:0; font-family:'Jersey 10','Silkscreen',monospace; font-weight:400; font-size:clamp(40px,5.5vw,68px);
     letter-spacing:4px; line-height:1; color:var(--cream); text-shadow:4px 4px 0 rgba(11,10,31,.8), 0 0 30px rgba(255,207,90,.35); transition:opacity .2s; }
   .info p { margin:8px 0 0; font-size:clamp(12px,1.25vw,15px); color:#fff3d6; text-shadow:2px 2px 0 rgba(11,10,31,.8); }
 
   /* ---------- stage ---------- */
   .stage { position:fixed; inset:0; z-index:3; }
-  .pedestal { position:absolute; left:50%; bottom:2vh; transform:translateX(-50%); image-rendering:pixelated; pointer-events:none;
-    filter:drop-shadow(0 18px 24px rgba(8,10,24,.55)); animation:bob 5s ease-in-out infinite; }
+  .pedestal { position:absolute; left:50%; transform:translateX(-50%); image-rendering:pixelated; pointer-events:none; }
   @keyframes bob { 0%,100% { translate:0 0; } 50% { translate:0 -8px; } }
-  .beam { display:none; position:absolute; left:50%; width:10px; transform:translateX(-50%); pointer-events:none;
-    background:linear-gradient(0deg, rgba(255,207,90,.0), rgba(255,207,90,.55)); filter:blur(2px); animation:bob 5s ease-in-out infinite; }
+  .beam { position:absolute; left:50%; width:14px; transform:translateX(-50%); pointer-events:none;
+    background:linear-gradient(0deg, rgba(255,207,90,.65), rgba(255,207,90,0)); filter:blur(3px); opacity:.8; }
   .orb { position:absolute; left:0; top:0; width:var(--orb); height:var(--orb); border-radius:50%; padding:0; border:0; cursor:pointer;
     background:#0b0a1f; overflow:hidden; will-change:transform,opacity;
     box-shadow:0 0 0 4px rgba(244,239,230,.75), 0 0 0 8px rgba(11,10,31,.6), 0 14px 30px rgba(8,10,24,.5); }
@@ -65,7 +63,7 @@
   .orb.shake { animation:shake .35s; }
   @keyframes shake { 20%,60% { margin-left:-8px } 40%,80% { margin-left:8px } }
 
-  .arrow { position:absolute; z-index:4; width:58px; height:58px; border:0; cursor:pointer; padding:0;
+  .arrow { position:absolute; z-index:4; width:62px; height:62px; border:0; border-radius:50%; cursor:pointer; padding:0;
     background:rgba(11,10,31,.65); box-shadow:inset 0 0 0 3px var(--gold), 0 4px 0 rgba(0,0,0,.35); display:grid; place-items:center; }
   .arrow:hover { background:rgba(11,10,31,.85); }
   .arrow:active { transform:translateY(3px); box-shadow:inset 0 0 0 3px var(--gold), 0 1px 0 rgba(0,0,0,.35); }
@@ -76,6 +74,7 @@
   .play:active { margin-top:3px; box-shadow:inset 0 0 0 3px rgba(255,255,255,.45), 0 2px 0 var(--gold-dk); }
   .play[disabled] { background:#6d6789; color:#d8d3ea; box-shadow:inset 0 0 0 3px rgba(255,255,255,.2), 0 5px 0 #3e3a57; cursor:default; }
   .dots { display:flex; gap:8px; justify-content:center; margin-top:16px; }
+  .dots[hidden] { display:none; }
   .dots i { width:9px; height:9px; background:rgba(244,239,230,.45); box-shadow:0 0 0 2px rgba(11,10,31,.5); }
   .dots i.on { background:var(--gold); }
   .hint { position:fixed; z-index:4; bottom:max(14px, env(safe-area-inset-bottom)); left:clamp(16px,4vw,48px); font-size:11px; color:rgba(255,243,214,.8); text-shadow:2px 2px 0 rgba(11,10,31,.8); }
@@ -91,7 +90,7 @@
     footer { left:0; right:0; text-align:center; }
     .play { font-size:15px; padding:12px 18px; }
   }
-  @media (prefers-reduced-motion:reduce) { .pedestal, .beam { animation:none; } }
+  
 </style>
 </head>
 <body>
@@ -100,14 +99,14 @@
 
 <a class="brand" href="./" aria-label="BitPillars home">
   <img src="brand/bitpillars-pfp-256.png" alt="">
-  <span>BITPILLARS</span>
+  <span>BitPillars</span>
 </a>
 <nav class="links">
   <a class="chip" href="https://github.com/krupakarsb/bitpillars">GITHUB</a>
   <button class="chip" id="random" style="border:0;cursor:pointer">RANDOM</button>
 </nav>
 
-<div class="info" id="info"><div aria-live="polite"><h1 id="gTitle">LOOPFALL</h1><p id="gGenre"></p></div><button class="play" id="play">▶ PLAY</button><div class="dots" id="dots"></div></div>
+<div class="info" id="info"><div aria-live="polite"><h1 id="gTitle">LOOPFALL</h1><p id="gGenre"></p></div><button class="play" id="play">▶ PLAY</button><div class="dots" id="dots" hidden></div></div>
 
 <main class="stage" id="stage">
   <div class="beam" id="beam"></div>
@@ -165,19 +164,24 @@ const GAMES = [
     location.href = g.href;
   }
 
+  const GROUND = 0.86;                                   // shared with the wallpaper
+  let floatT = 0;
   function layout() {
     const W = innerWidth, H = innerHeight, mobile = W < 700;
-    const pedH = Math.min(mobile ? H * 0.38 : H * 0.46, 440, W * (mobile ? 0.95 : 0.6));
+    const pedH = Math.min(mobile ? H * 0.36 : H * 0.38, 420, W * (mobile ? 0.9 : 0.5));
     ped.style.height = pedH + 'px'; ped.style.width = pedH + 'px';
-    const orb = Math.round(Math.max(130, Math.min(mobile ? W * 0.44 : 250, H * 0.27)));
+    const groundY = H * GROUND;
+    const pedTop = groundY + Math.max(18, H * 0.05) - pedH * (52 / 64);   // base sits down in the grass, not on its edge
+    ped.style.top = pedTop + 'px';
+    const tip = pedTop + pedH * (6 / 64);
+    const orb = Math.round(Math.max(120, Math.min(mobile ? W * 0.42 : 230, H * 0.22)));
     document.documentElement.style.setProperty('--orb', orb + 'px');
-    const pedTop = H - H * 0.02 - pedH;
-    const obeliskTop = pedTop + pedH * (9 / 64);             // tip of the obelisk inside the art
-    const cy = obeliskTop - orb / 2 + orb * 0.05;
+    const gap = Math.max(26, orb * 0.2);
+    const cy = tip - gap - orb / 2;
     const spacing = mobile ? orb * 0.95 : Math.min(orb * 1.25, W * 0.17);
-    beam.style.top = (cy + orb / 2) + 'px'; beam.style.height = (obeliskTop - cy - orb / 2 + pedH * 0.04) + 'px';
-    info.style.top = Math.max(mobile ? 72 : 70, cy - orb / 2 - info.offsetHeight - (mobile ? 34 : 42)) + 'px';
-    const arrowY = cy - (mobile ? 23 : 29);
+    beam.style.top = (cy + orb / 2 + 4) + 'px'; beam.style.height = (tip - cy - orb / 2) + 'px';
+    info.style.top = Math.max(mobile ? 72 : 70, cy - orb / 2 - info.offsetHeight - (mobile ? 30 : 38)) + 'px';
+    const arrowY = cy - (mobile ? 23 : 31);
     const ax = mobile ? 10 : Math.max(24, W / 2 - spacing * 2.6 - 80);
     prev.style.left = ax + 'px'; next.style.right = ax + 'px'; prev.style.top = next.style.top = arrowY + 'px';
     geo = { W, cy, orb, spacing, mobile };
@@ -189,17 +193,20 @@ const GAMES = [
     c += (target - c) * 0.16;
     if (Math.abs(target - c) < 0.001) c = target;
     const { W, cy, orb, spacing, mobile } = geo;
+    floatT += 1 / 60;
+    const bob = Math.sin(floatT * 1.6) * 7;
     orbs.forEach((o, i) => {
       const d = wrapDist(i, c), ad = Math.abs(d);
       const s = ad < 1 ? 1 - 0.45 * ad : Math.max(0.3, 0.55 - 0.1 * (ad - 1));
       const x = W / 2 + Math.sign(d) * (ad < 1 ? ad * spacing : spacing + (ad - 1) * spacing * 0.78);
-      const y = cy + Math.min(ad, 1) * orb * 0.42 + Math.max(0, ad - 1) * orb * 0.06;
+      const y = cy + Math.min(ad, 1) * orb * 0.42 + Math.max(0, ad - 1) * orb * 0.06 + bob * Math.max(0, 1 - ad);
       const vis = mobile ? 1.6 : 2.6;
       o.style.transform = `translate(${x - orb / 2}px, ${y - orb / 2}px) scale(${s})`;
       o.style.opacity = ad > vis ? 0 : ad > vis - 0.6 ? (vis - ad) / 0.6 : ad < 0.5 ? 1 : 0.92;
       o.style.zIndex = 100 - Math.round(ad * 10);
       o.style.pointerEvents = ad > vis ? 'none' : 'auto';
       o.classList.toggle('center', ad < 0.5);
+      if (ad < 0.5) beam.style.translate = `0 ${bob}px`;
       o.style.filter = ad < 0.5 ? 'none' : `brightness(${Math.max(0.55, 0.95 - ad * 0.15)})`;
     });
     const k = cur();
@@ -236,138 +243,172 @@ const GAMES = [
   requestAnimationFrame(frame);
 })();
 
-// ---------------------------------------------------------------- live wallpaper: pixel cherry-blossom forest
+// ---------------------------------------------------------------- live wallpaper: deep cherry-blossom forest at night
 (function () {
   const cv = document.getElementById('wall'), g = cv.getContext('2d');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let W, H, PX, layers = [], petals = [], motes = [], mx = 0.5;
+  const GROUND = 0.86;
+  let W, H, PX, layers = [], petals = [], flies = [], stars = [], moon, mx = 0.5;
   const hash = (a, b) => { let h = a * 374761393 + b * 668265263; h = (h ^ (h >>> 13)) * 1274126177; return (h ^ (h >>> 16)) >>> 0; };
   const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-  function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
   const hex = s => [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16));
+  function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
 
   function sky(c) {
     const x = c.getContext('2d'), img = x.createImageData(c.width, c.height), d = img.data;
-    const stops = [[0, '#1d3340'], [0.25, '#2f5a63'], [0.5, '#5f9a92'], [0.66, '#9fcfbf'], [0.78, '#b8dcc8'], [1, '#6f9e7c']].map(s => [s[0], hex(s[1])]);
+    const st = [[0, '#05061a'], [0.3, '#0c1130'], [0.55, '#18214a'], [0.7, '#2a3766'], [0.8, '#33427a'], [1, '#0d1a1a']].map(s => [s[0], hex(s[1])]);
     for (let y = 0; y < c.height; y++) {
-      const t = y / c.height; let k = 0; while (k < stops.length - 2 && stops[k + 1][0] < t) k++;
-      const a = stops[k], b = stops[k + 1], f = (t - a[0]) / (b[0] - a[0]);
+      const t = y / c.height; let k = 0; while (k < st.length - 2 && st[k + 1][0] < t) k++;
+      const a = st[k], b = st[k + 1], f = (t - a[0]) / (b[0] - a[0]);
       for (let xx = 0; xx < c.width; xx++) {
-        const th = (BAY[(y & 3) * 4 + (xx & 3)] / 16 - 0.5) * 12, o = (y * c.width + xx) * 4;
-        for (let i = 0; i < 3; i++) d[o + i] = Math.round((a[1][i] + (b[1][i] - a[1][i]) * f + th) / 8) * 8;
+        const th = (BAY[(y & 3) * 4 + (xx & 3)] / 16 - 0.5) * 10, o = (y * c.width + xx) * 4;
+        let col = [0, 1, 2].map(i => a[1][i] + (b[1][i] - a[1][i]) * f);
+        const md = Math.hypot(xx - moon.x, y - moon.y);
+        if (md < moon.r * 4) { const h = Math.pow(1 - md / (moon.r * 4), 2) * 0.35; col = col.map((v, i) => v + ([190, 200, 255][i] - v) * h); }
+        if (md < moon.r) {
+          const sh = 1 - ((xx - moon.x) + (y - moon.y)) / (moon.r * 5);
+          col = [238, 234, 255].map(v => v * sh);
+          if (hash(xx >> 1, y >> 1) % 9 === 0) col = col.map(v => v * 0.9);
+        }
+        for (let i = 0; i < 3; i++) d[o + i] = Math.max(0, Math.min(255, Math.round((col[i] + th) / 6) * 6));
         d[o + 3] = 255;
       }
     }
     x.putImageData(img, 0, 0);
   }
-  function blob(x, cx, cy, r, cols, seed) {     // dithered canopy cluster
-    for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let xx = Math.floor(cx - r * 1.4); xx <= cx + r * 1.4; xx++) {
-      const dx = (xx - cx) / 1.4, dy = y - cy, d = Math.sqrt(dx * dx + dy * dy) + (hash(xx, y + seed) % 3) * 0.5;
+  function blob(x, cx, cy, r, cols, seed) {
+    for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let xx = Math.floor(cx - r * 1.5); xx <= cx + r * 1.5; xx++) {
+      const dx = (xx - cx) / 1.5, dy = y - cy, d = Math.sqrt(dx * dx + dy * dy) + (hash(xx, y + seed) % 4) * 0.45;
       if (d > r) continue;
       let c = cols[1];
-      if (dy < -r * 0.35 && dx < r * 0.3) c = cols[0];
-      if (dy > r * 0.35 || (dx > r * 0.5 && dy > 0)) c = cols[2];
-      if (d > r - 1.5 && (xx + y) % 2) continue;
-      if (hash(xx, y + seed * 7) % 23 === 0) c = cols[0];
+      if (dy < -r * 0.3 && dx > -r * 0.2) c = cols[0];            // moonlight from the upper right
+      if (dy > r * 0.3 || (dx < -r * 0.5 && dy > -r * 0.1)) c = cols[2];
+      if (d > r - 1.4 && (xx + y) % 2) continue;
+      if (cols[3] && hash(xx, y + seed * 3) % 31 === 0) c = cols[3];
       x.fillStyle = c; x.fillRect(xx, y, 1, 1);
     }
   }
   function trunk(x, x0, w, y0, y1, cols, seed) {
     for (let y = y0; y < y1; y++) {
-      const sway = Math.round(Math.sin(y / 23 + seed) * 1.2);
+      const sway = Math.round(Math.sin(y / 31 + seed) * (w > 3 ? 1.5 : 0.6));
       for (let i = 0; i < w; i++) {
-        let c = i === 0 ? cols[0] : i >= w - 1 ? cols[2] : cols[1];
-        if (w > 4 && hash(x0 + i, y + seed) % 13 === 0) c = cols[2];
+        let c = i >= w - 1 && w > 2 ? cols[0] : i === 0 && w > 3 ? cols[2] : cols[1];
+        if (w > 5 && hash(x0 + i, y + seed) % 11 === 0) c = cols[2];
         x.fillStyle = c; x.fillRect(x0 + i + sway, y, 1, 1);
       }
     }
   }
+  function fog(x, y0, y1, col, a) {
+    const steps = 6;
+    for (let k = 0; k < steps; k++) { x.globalAlpha = a / steps; x.fillStyle = col; x.fillRect(0, Math.round(y0 + (y1 - y0) * k / steps), x.canvas.width, H); }
+    x.globalAlpha = 1;
+  }
+  // far -> near: [trunk spacing, trunk width, canopy bottom, ground line, trunk colours, canopy colours, mist]
+  const DEPTH = [
+    [6, 1, 0.46, 0.73, ['#5866a0', '#46528a', '#3c4778'], ['#6d5f9c', '#5a4f8a', '#4a417a'], 0.22],
+    [10, 2, 0.40, 0.75, ['#4c5a92', '#38447a', '#2f3a6a'], ['#8a679f', '#735590', '#5b467c', '#b9a4d8'], 0.18],
+    [17, 3, 0.33, 0.77, ['#5c6aa8', '#2b355f', '#222a4e'], ['#b56fa6', '#965b92', '#6f4476', '#f1b7dc'], 0.14],
+    [28, 5, 0.25, 0.79, ['#6f7fc0', '#1d2445', '#161c38'], ['#d27fb6', '#ad5f97', '#7c4170', '#ffd0ea'], 0.08],
+  ];
   function build() {
     const r = cv.getBoundingClientRect();
-    PX = r.width < 700 ? 3 : 4;
+    PX = r.width < 700 ? 2 : 3;
     W = Math.ceil(r.width / PX); H = Math.ceil(r.height / PX);
     cv.width = W; cv.height = H;
-    const pad = 12, LW = W + pad * 2;
-    const ground = Math.round(H * 0.8);
-    // layer 0: sky
+    moon = { x: Math.round(W * (r.width < 700 ? 0.78 : 0.76)), y: Math.round(H * 0.17), r: Math.round(Math.min(W, H) * 0.07) };
+    const pad = 16, LW = W + pad * 2, mid = pad + W / 2;
     const L0 = mk(W, H); sky(L0);
-    // layer 1: far misty trunks + canopy
-    const L1 = mk(LW, H), x1 = L1.getContext('2d');
-    for (let i = 0; i < LW; i += 9 + (hash(i, 1) % 7)) trunk(x1, i, 2 + hash(i, 2) % 2, Math.round(H * 0.15), ground, ['#a9d3c6', '#8fbcb0', '#7faea3'], i);
-    for (let i = -10; i < LW + 10; i += 14) blob(x1, i + hash(i, 3) % 8, H * 0.08 + hash(i, 4) % Math.round(H * 0.1), 9 + hash(i, 5) % 6, ['#f2cbdc', '#ddb0c6', '#c79ab3'], i);
-    // layer 2: mid trunks + blossoms
-    const L2 = mk(LW, H), x2 = L2.getContext('2d');
-    for (let i = 4; i < LW; i += 22 + (hash(i, 6) % 14)) {
-      if (Math.abs(i - pad - W / 2) < W * 0.14) continue;   // keep the middle open for the pillar
-      trunk(x2, i, 4 + hash(i, 7) % 3, Math.round(H * 0.12), ground + 2, ['#7b9a90', '#58766f', '#44605c'], i);
-    }
-    for (let i = -8; i < LW + 8; i += 18) blob(x2, i + hash(i, 8) % 10, H * 0.05 + hash(i, 9) % Math.round(H * 0.13), 11 + hash(i, 10) % 7, ['#ffc6de', '#f095bf', '#c96a98'], i + 50);
-    // layer 3: ground, near trunks at the edges, foreground bushes
-    const L3 = mk(LW, H), x3 = L3.getContext('2d');
+    layers = [[L0, 0]];
+    DEPTH.forEach(([sp, tw, cb, gl, tc, cc, mist], li) => {
+      const L = mk(LW, H), x = L.getContext('2d');
+      const canopyBottom = Math.round(H * cb), groundLine = Math.round(H * gl);
+      for (let i = hash(li, 1) % sp; i < LW; i += sp + (hash(i, li) % Math.max(2, sp >> 1))) {
+        if (li >= 2 && Math.abs(i - mid) < W * (li === 3 ? 0.17 : 0.1)) continue;   // a clearing for the pillar
+        trunk(x, i, tw + (hash(i, 7) % 2), Math.round(canopyBottom * 0.4), groundLine, tc, i + li);
+      }
+      const step = Math.max(6, Math.round(sp * 1.1 + 4 + li * 3));
+      for (let i = -10; i < LW + 10; i += step) {
+        const rr = 5 + li * 3 + hash(i, li + 3) % (4 + li * 2);
+        const bx = i + hash(i, li + 4) % step - 16;
+        if (Math.hypot(bx - moon.x, canopyBottom - rr - moon.y) < moon.r * 2.4 + rr) continue;
+        blob(x, i + hash(i, li + 4) % step, canopyBottom - rr * 0.6 - hash(i, li + 5) % Math.round(H * 0.06 + li * 4), rr, cc, i + li * 99);
+        if (li < 3 && hash(i, li + 6) % 2) blob(x, i + step / 2, canopyBottom * 0.55 - hash(i, li + 8) % 12, rr * 0.9, cc, i + li * 77);
+      }
+      fog(x, groundLine - H * 0.12, groundLine + 4, '#8a9ad6', mist);        // mist pooled at the trunks' feet
+      layers.push([L, 1 + li * 2.5]);
+    });
+    // ground + front silhouettes
+    const G = mk(LW, H), x = G.getContext('2d');
+    const ground = Math.round(H * GROUND);
     for (let xx = 0; xx < LW; xx++) {
-      const top = ground + Math.round(Math.sin(xx / 17) * 2 + Math.sin(xx / 7) * 1);
+      const top = ground + Math.round(Math.sin(xx / 23) * 1.5 + Math.sin(xx / 9));
       for (let y = top; y < H; y++) {
-        let c = y < top + 2 ? '#8dbb5a' : y < top + 6 ? '#6c9b45' : '#4e7a36';
-        if ((xx + y) % 2 && y === top + 6) c = '#6c9b45';
-        if (hash(xx, y) % 37 === 0) c = ['#ffb3d1', '#ff8fbf', '#ffd6ea'][hash(xx, y) % 3];
-        x3.fillStyle = c; x3.fillRect(xx, y, 1, 1);
+        let c = y < top + 2 ? '#3d6644' : y < top + 5 ? '#2c4a34' : y < top + 12 ? '#223c2b' : '#1a3123';
+        if (y === top && (xx % 3 === 0)) c = '#56875a';
+        if (hash(xx, y) % 41 === 0) c = ['#ffb3d1', '#e07bb0', '#ffd6ea'][hash(xx, y) % 3];
+        x.fillStyle = c; x.fillRect(xx, y, 1, 1);
       }
     }
-    const nearW = Math.max(10, Math.round(W * 0.035));
+    fog(x, ground - 2, ground + 10, '#8a9ad6', 0.10);
+    const nearW = Math.max(14, Math.round(W * 0.045));
     for (const side of [0, 1]) {
-      const x0 = side ? LW - nearW - 6 : 6;
-      trunk(x3, x0, nearW, 0, H, ['#4a5a5c', '#2d393c', '#1f282b'], side * 9);
-      blob(x3, side ? LW - 10 : 10, H * 0.06, Math.max(16, W * 0.07), ['#ffd6ea', '#ff9ec7', '#d4679a'], side + 3);
-      blob(x3, side ? LW - 34 : 34, H * 0.16, Math.max(12, W * 0.05), ['#ffd6ea', '#ff9ec7', '#d4679a'], side + 5);
+      const x0 = side ? LW - nearW - 4 : 4;
+      trunk(x, x0, nearW, 0, H, ['#3c4a7a', '#0d1124', '#090c1a'], side * 9 + 3);
+      blob(x, side ? LW - 8 : 8, H * 0.05, Math.max(20, W * 0.09), ['#e48fc4', '#a8578f', '#6a325c', '#ffd6ea'], side + 3);
+      blob(x, side ? LW - 40 : 40, H * 0.13, Math.max(14, W * 0.06), ['#e48fc4', '#a8578f', '#6a325c', '#ffd6ea'], side + 5);
     }
-    for (let i = 0; i < LW; i += 6) {
-      const bh = 3 + hash(i, 12) % 6;
-      for (let y = H - bh; y < H; y++) for (let k = 0; k < 7; k++) {
+    for (let i = 0; i < LW; i += 5) {
+      const bh = 3 + hash(i, 12) % 7;
+      for (let y = H - bh; y < H; y++) for (let k = 0; k < 6; k++) {
         if (hash(i + k, y) % 5 === 0) continue;
-        x3.fillStyle = (y === H - bh) ? '#3f6a33' : '#2b4a27'; x3.fillRect(i + k, y, 1, 1);
+        x.fillStyle = y === H - bh ? '#1f3a26' : '#132619'; x.fillRect(i + k, y, 1, 1);
       }
-      if (hash(i, 13) % 3 === 0) { x3.fillStyle = '#ff9ec7'; x3.fillRect(i + 2, H - bh - 1, 1, 1); x3.fillStyle = '#ffd6ea'; x3.fillRect(i + 3, H - bh, 1, 1); }
     }
-    layers = [[L0, 0], [L1, 2], [L2, 5], [L3, 10]];
-    const n = Math.round(W * H / (PX === 3 ? 260 : 420));
+    layers.push([G, 12]);
+    const n = Math.round(W * H / (PX === 2 ? 900 : 700));
     petals = Array.from({ length: n }, () => newPetal(true));
-    motes = Array.from({ length: 24 }, () => ({ x: Math.random() * W, y: Math.random() * H * 0.8, p: Math.random() * 6.28 }));
+    flies = Array.from({ length: Math.round(W / 14) }, () => ({ x: Math.random() * W, y: H * (0.45 + Math.random() * 0.45), p: Math.random() * 6.28, s: 0.5 + Math.random() }));
+    stars = Array.from({ length: Math.round(W * H / 500) }, () => ({ x: Math.random() * W, y: Math.random() * H * 0.45, p: Math.random() * 6.28 }));
   }
   function newPetal(anywhere) {
-    return { x: Math.random() * (W + 40) - 20, y: anywhere ? Math.random() * H : -4 - Math.random() * 20,
-      vy: 4 + Math.random() * 7, vx: 2 + Math.random() * 4, p: Math.random() * 6.28, s: Math.random(),
-      c: ['#ffb3d1', '#ff8fbf', '#ffd6ea', '#ffc6de'][Math.floor(Math.random() * 4)] };
+    return { x: Math.random() * (W + 60) - 30, y: anywhere ? Math.random() * H : -4 - Math.random() * 30,
+      vy: 5 + Math.random() * 8, vx: 2 + Math.random() * 5, p: Math.random() * 6.28, s: Math.random(), glow: Math.random() < 0.18,
+      c: ['#ffb3d1', '#ff8fbf', '#ffd6ea', '#e889bd'][Math.floor(Math.random() * 4)] };
   }
   let lastT = performance.now();
   function frame(t) {
     const dt = Math.min(0.05, (t - lastT) / 1000); lastT = t;
-    for (const [L, par] of layers) {
-      const off = par ? Math.round((mx - 0.5) * -par) - 12 : 0;
-      g.drawImage(L, off, 0);
+    g.drawImage(layers[0][0], 0, 0);
+    for (const s of stars) {                              // stars peek through the gaps in the canopy
+      const b = (Math.sin(t / 900 + s.p) + 1) / 2; if (b < 0.3) continue;
+      g.fillStyle = `rgba(230,236,255,${b * 0.9})`; g.fillRect(Math.round(s.x), Math.round(s.y), 1, 1);
     }
-    // light shafts
-    const rays = [[0.16, 9], [0.33, 14], [0.52, 7], [0.68, 12], [0.84, 9]];
-    for (let i = 0; i < rays.length; i++) {
-      const [fx, w] = rays[i], a = 0.07 + 0.04 * Math.sin(t / 1400 + i * 1.7);
-      g.fillStyle = `rgba(255,246,224,${reduce ? 0.08 : a})`;
-      g.beginPath(); const x0 = fx * W - H * 0.35;
-      g.moveTo(x0, 0); g.lineTo(x0 + w, 0); g.lineTo(x0 + w + H * 0.55 + w * 2, H * 0.85); g.lineTo(x0 + H * 0.55, H * 0.85); g.closePath(); g.fill();
+    for (let i = 1; i < layers.length; i++) {
+      const [L, par] = layers[i];
+      g.drawImage(L, Math.round((mx - 0.5) * -par) - 16, 0);
+      if (i === 2 || i === 4) {                             // moonbeams between depth layers
+        for (let k = 0; k < 4; k++) {
+          const a = 0.035 + 0.02 * Math.sin(t / 1700 + k * 2 + i);
+          g.fillStyle = `rgba(190,205,255,${reduce ? 0.04 : a})`;
+          const x0 = moon.x - 10 + k * 14 - i * 6, w = 4 + (k % 2) * 3;
+          g.beginPath(); g.moveTo(x0, moon.y); g.lineTo(x0 + w, moon.y);
+          g.lineTo(x0 - H * 0.42 + w * 3, H * GROUND); g.lineTo(x0 - H * 0.42, H * GROUND); g.closePath(); g.fill();
+        }
+      }
     }
-    // floating motes in the light
-    for (const m of motes) {
-      const b = (Math.sin(t / 700 + m.p) + 1) / 2; if (b < 0.4) continue;
-      g.fillStyle = `rgba(255,243,214,${b * 0.8})`;
-      g.fillRect(Math.round(m.x + Math.sin(t / 2000 + m.p) * 4), Math.round(m.y + Math.cos(t / 2600 + m.p) * 3), 1, 1);
+    for (const f of flies) {                              // fireflies
+      const b = (Math.sin(t / 600 * f.s + f.p) + 1) / 2; if (b < 0.25) continue;
+      const X = Math.round(f.x + Math.sin(t / 2300 + f.p) * 10), Y = Math.round(f.y + Math.cos(t / 1900 + f.p * 2) * 6);
+      g.fillStyle = `rgba(255,220,120,${b * 0.25})`; g.fillRect(X - 1, Y, 3, 1); g.fillRect(X, Y - 1, 1, 3);
+      g.fillStyle = `rgba(255,236,160,${b})`; g.fillRect(X, Y, 1, 1);
     }
-    // falling petals
     for (const p of petals) {
-      if (!reduce) { p.y += p.vy * dt; p.x += (p.vx + Math.sin(t / 900 + p.p) * 6) * dt; }
-      if (p.y > H + 2 || p.x > W + 20) Object.assign(p, newPetal(false));
-      const flip = Math.sin(t / 260 + p.p * 3) > 0;
+      if (!reduce) { p.y += p.vy * dt; p.x += (p.vx + Math.sin(t / 900 + p.p) * 7) * dt; }
+      if (p.y > H + 2 || p.x > W + 30) Object.assign(p, newPetal(false));
+      const X = Math.round(p.x), Y = Math.round(p.y), flip = Math.sin(t / 260 + p.p * 3) > 0;
+      if (p.glow) { g.fillStyle = 'rgba(255,190,225,.25)'; g.fillRect(X - 1, Y - 1, 3, 3); }
       g.fillStyle = p.c;
-      const X = Math.round(p.x), Y = Math.round(p.y);
-      if (p.s > 0.6) { g.fillRect(X, Y, flip ? 2 : 1, flip ? 1 : 2); }
-      else g.fillRect(X, Y, 1, 1);
+      if (p.s > 0.55) g.fillRect(X, Y, flip ? 2 : 1, flip ? 1 : 2); else g.fillRect(X, Y, 1, 1);
     }
     if (!reduce || !frame.once) { frame.once = true; requestAnimationFrame(frame); }
   }
