@@ -11,8 +11,12 @@ Tiny pixel games, built for fun and free to play in your browser, on a phone or 
 | Game | Genre | Play | Source |
 |---|---|---|---|
 | **LOOPFALL**: a gravity puzzle in a world that repeats forever | Puzzle | [Play](https://krupakarsb.github.io/bitpillars/loopfall/) | [`loopfall/`](loopfall/) |
+| **OUROBOROS**: a fast, chill snake in a world without edges | Arcade | [Play](https://krupakarsb.github.io/bitpillars/ouroboros/) | [`ouroboros/`](ouroboros/) |
 
-<img src="loopfall/docs/thumb.png" width="420" alt="LOOPFALL gameplay">
+<p>
+  <img src="loopfall/docs/thumb.png" width="400" alt="LOOPFALL gameplay">
+  <img src="ouroboros/docs/thumb.png" width="400" alt="OUROBOROS gameplay">
+</p>
 
 ## Layout
 
@@ -20,6 +24,7 @@ Tiny pixel games, built for fun and free to play in your browser, on a phone or 
 index.html        landing page: game orbs on the pillar, live pixel forest
 brand/            logo, profile pictures, favicons, banner, splash
 loopfall/         one folder per game, each with its own README and built index.html
+ouroboros/
 ```
 
 Every game folder ships a built `index.html`, so GitHub Pages serves it at `krupakarsb.github.io/bitpillars/<folder>/` with no build step.

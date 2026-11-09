@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>OUROBOROS · a BitPillars game</title>
+<meta name="description" content="OUROBOROS: a snake in a world without edges. A small pixel game by BitPillars.">
+<meta name="theme-color" content="#05060f">
+<link rel="icon" href="../brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../brand/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Silkscreen&display=swap" rel="stylesheet">
+<style>
+  :root { --gold:#ffcf5a; --gold-dk:#c97a18; --teal:#7ff3e0; --pink:#ff7ab8; --cream:#f4efe6; --ink:#0b0a1f; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; background:#05060f; color:var(--cream); font-family:'Silkscreen',monospace;
+    touch-action:none; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; overscroll-behavior:none; }
+  canvas#c { position:fixed; inset:0; width:100%; height:100%; image-rendering:pixelated; display:block; }
+  .hidden { display:none !important; }
+  button { font-family:'Silkscreen',monospace; font-size:15px; font-weight:700; color:var(--cream); background:rgba(11,10,31,.7);
+    border:0; padding:12px 16px; cursor:pointer; letter-spacing:1px; box-shadow:inset 0 0 0 2px rgba(255,207,90,.6), 0 4px 0 rgba(0,0,0,.4);
+    touch-action:manipulation; }
+  button:active { transform:translateY(3px); box-shadow:inset 0 0 0 2px rgba(255,207,90,.6), 0 1px 0 rgba(0,0,0,.4); }
+  button.big { background:var(--gold); color:var(--ink); font-size:18px; padding:15px 22px;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.45), 0 5px 0 var(--gold-dk), 0 0 26px rgba(255,207,90,.4); }
+  button:disabled { opacity:.45; cursor:default; }
+  .jersey { font-family:'Jersey 10','Silkscreen',monospace; font-weight:400; }
+
+  /* HUD */
+  .hud { position:fixed; z-index:3; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-start;
+    padding:calc(env(safe-area-inset-top) + 14px) 18px 0; pointer-events:none; }
+  #hName { font-size:30px; letter-spacing:2px; line-height:1; text-shadow:3px 3px 0 rgba(0,0,0,.6); }
+  #hNum { font-size:12px; color:var(--gold); letter-spacing:2px; margin-bottom:4px; }
+  .hr { text-align:right; }
+  #hBits { font-size:28px; line-height:1; text-shadow:3px 3px 0 rgba(0,0,0,.6); }
+  #hBits b { color:var(--teal); font-weight:400; }
+  #hSub { font-size:11px; opacity:.7; margin-top:6px; letter-spacing:1px; }
+  #cap { position:fixed; z-index:3; left:16px; right:16px; text-align:center; font-size:13px; line-height:1.6; color:#fff3d6;
+    text-shadow:2px 2px 0 rgba(0,0,0,.7); pointer-events:none; transition:opacity .5s; }
+  #start { position:fixed; z-index:3; left:0; right:0; text-align:center; font-size:14px; letter-spacing:3px; color:var(--gold);
+    text-shadow:2px 2px 0 rgba(0,0,0,.7); pointer-events:none; animation:pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity:.35; } }
+  .ctrl { position:fixed; z-index:3; bottom:calc(env(safe-area-inset-bottom) + 14px); left:16px; right:16px; display:flex; justify-content:space-between; pointer-events:none; }
+  .ctrl button { pointer-events:auto; font-size:12px; padding:10px 12px; }
+
+  /* screens */
+  .screen { position:fixed; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    padding:calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 20px); text-align:center; }
+  .dim { background:rgba(4,5,14,.72); backdrop-filter:blur(2px); }
+  #emblem { width:min(170px,32vh); height:min(170px,32vh); flex:none; margin-bottom:-4px; }
+  #title h1 { margin:0; font-size:clamp(64px,13vw,128px); letter-spacing:6px; line-height:.9; color:var(--cream);
+    text-shadow:5px 5px 0 #2c8f8a, 10px 10px 0 rgba(0,0,0,.5), 0 0 40px rgba(127,243,224,.25); }
+  .tag { font-size:13px; color:#cfd8ff; letter-spacing:2px; margin:0 0 18px; opacity:.85; }
+  .menu { display:flex; flex-direction:column; gap:12px; width:min(300px,86vw); }
+  .row { display:flex; gap:10px; } .row button { flex:1; }
+  .small { font-size:11px; opacity:.7; }
+  .by { position:fixed; bottom:calc(env(safe-area-inset-bottom) + 14px); left:0; right:0; font-size:11px; opacity:.75; }
+  .by a { color:var(--gold); text-decoration:none; }
+  .card { background:rgba(11,10,31,.92); padding:26px 24px; width:min(340px,88vw); box-shadow:inset 0 0 0 3px var(--gold), 0 10px 0 rgba(0,0,0,.4);
+    display:flex; flex-direction:column; gap:12px; align-items:stretch; }
+  .card h2 { margin:0; font-size:44px; letter-spacing:3px; color:var(--gold); line-height:1; }
+  .card p { margin:0; font-size:13px; line-height:1.7; color:#e8e4f8; }
+  #grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:min(330px,88vw); }
+  #grid button { aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:6px; }
+  #grid button .n { font-family:'Jersey 10',monospace; font-size:34px; line-height:1; }
+  #grid button .t { font-size:9px; opacity:.8; }
+  #grid button.done { box-shadow:inset 0 0 0 2px var(--teal), 0 4px 0 rgba(0,0,0,.4); }
+  #ending { background:radial-gradient(circle at 50% 42%, rgba(255,207,90,.16), rgba(4,5,14,.94) 62%); }
+  #ending h2 { font-size:clamp(40px,8vw,72px); letter-spacing:4px; margin:0; color:var(--gold); line-height:1; text-shadow:4px 4px 0 rgba(0,0,0,.5); }
+  #ending p { font-size:13px; line-height:1.8; max-width:420px; margin:0; color:#e8e4f8; }
+  #toast { position:fixed; z-index:6; left:50%; top:40%; transform:translate(-50%,-50%); font-size:30px; letter-spacing:2px; color:var(--pink);
+    text-shadow:3px 3px 0 rgba(0,0,0,.7); pointer-events:none; opacity:0; transition:opacity .2s; white-space:nowrap; }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="hud hidden" id="hud">
+  <div><div id="hNum">LEVEL 1</div><div id="hName" class="jersey">FIRST LIGHT</div></div>
+  <div class="hr"><div id="hBits" class="jersey"><b>0</b>/5</div><div id="hSub">LENGTH 3</div></div>
+</div>
+<div id="cap"></div>
+<div id="start" class="hidden">SWIPE TO START</div>
+<div class="ctrl hidden" id="ctrl"><button id="bMenu">MENU</button><button id="bRestart">RESTART</button></div>
+<div id="toast" class="jersey"></div>
+
+<div class="screen" id="title">
+  <div id="emblem"></div>
+  <h1 class="jersey">OUROBOROS</h1>
+  <p class="tag">a snake in a world without edges</p>
+  <div class="menu">
+    <button class="big" id="tPlay">PLAY</button>
+    <div class="row"><button id="tLevels">LEVELS</button><button id="tEndless">ENDLESS</button></div>
+    <div class="row"><button id="tSfx">SFX ON</button><button id="tMusic">MUSIC ON</button></div>
+    <div class="small" id="tStats"></div>
+  </div>
+  <div class="by">a <a href="../index.html">BitPillars</a> game</div>
+</div>
+
+<div class="screen dim hidden" id="levels">
+  <h2 class="jersey" style="margin:0;font-size:44px;letter-spacing:3px;color:var(--gold)">LEVELS</h2>
+  <div id="grid"></div>
+  <button id="lBack">BACK</button>
+</div>
+
+<div class="screen dim hidden" id="pause">
+  <div class="card">
+    <h2 class="jersey">PAUSED</h2>
+    <button class="big" id="pResume">RESUME</button>
+    <div class="row"><button id="pRestart">RESTART</button><button id="pLevels">LEVELS</button></div>
+    <div class="row"><button id="pSfx">SFX</button><button id="pMusic">MUSIC</button></div>
+    <button id="pTitle">TITLE</button>
+  </div>
+</div>
+
+<div class="screen dim hidden" id="clear">
+  <div class="card">
+    <h2 class="jersey" id="cTitle">CLEAR</h2>
+    <p id="cInfo"></p>
+    <div class="row"><button id="cRetry">RETRY</button><button class="big" id="cNext">NEXT</button></div>
+  </div>
+</div>
+
+<div class="screen hidden" id="ending">
+  <h2 class="jersey">THE END WAS<br>THE BEGINNING</h2>
+  <p id="eInfo"></p>
+  <div class="menu" style="margin-top:10px">
+    <button class="big" id="eEndless">ENDLESS MODE</button>
+    <div class="row"><button id="eTitle">TITLE</button><button id="eBP">BITPILLARS</button></div>
+  </div>
+</div>
+
+<script>
+// OUROBOROS engine: a snake in a world without edges. Pure logic, no DOM.
+(function (root) {
+  const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];           // up right down left
+  const W = 16, H = 16;
+
+  const LEVELS = [
+    { name: 'First Light', hint: 'Swipe or use arrows to steer. Leave one edge, return from the other.', goal: 5, speed: 6.5, accel: 0.15,
+      start: [4, 8, 1, 3], map: [] },
+    { name: 'Pillars', hint: 'Eat the bits. Don’t bite yourself.', goal: 7, speed: 7, accel: 0.18, start: [2, 8, 1, 3], map: [
+      '................', '................', '................', '................',
+      '....##....##....', '....##....##....', '................', '................',
+      '................', '................', '....##....##....', '....##....##....',
+      '................', '................', '................', '................'] },
+    { name: 'Corridors', hint: 'The walls end, the world doesn’t. Go up to come down.', goal: 8, speed: 7.5, accel: 0.2, start: [7, 3, 2, 3], map: [
+      '.....#....#.....', '.....#....#.....', '.....#....#.....', '.....#....#.....',
+      '.....#....#.....', '.....#....#.....', '.....#....#.....', '................',
+      '................', '.....#....#.....', '.....#....#.....', '.....#....#.....',
+      '.....#....#.....', '.....#....#.....', '.....#....#.....', '.....#....#.....'] },
+    { name: 'Golden', hint: 'Gold bits make you three longer. Catch them before they fade.', goal: 8, speed: 8, accel: 0.22, gold: true, start: [2, 2, 1, 3], map: [
+      '................', '................', '................', '................',
+      '................', '................', '.......##.......', '.....######.....',
+      '.....######.....', '.......##.......', '................', '................',
+      '................', '................', '................', '................'] },
+    { name: 'Thin Air', hint: 'Pink bits make you two shorter. Stay light.', goal: 9, speed: 8, accel: 0.22, gold: true, pink: true, start: [8, 0, 1, 3], map: [
+      '................', '.######..######.', '.#............#.', '.#............#.',
+      '.#...######...#.', '.#............#.', '.#............#.', '................',
+      '................', '.#............#.', '.#............#.', '.#...######...#.',
+      '.#............#.', '.#............#.', '.######..######.', '................'] },
+    { name: 'Drift', hint: 'These bits wander. Read where they’re going.', goal: 9, speed: 8.5, accel: 0.25, drift: true, pink: true, start: [1, 1, 1, 3], map: [
+      '................', '................', '..#.........#...', '................',
+      '.......#........', '................', '....#......#....', '................',
+      '................', '.#.......#......', '................', '......#.....#...',
+      '................', '...#............', '..........#.....', '................'] },
+    { name: 'Maze', hint: 'Narrow halls. Plan the turn after the next one.', goal: 10, speed: 8.5, accel: 0.25, pink: true, start: [1, 1, 1, 3], map: [
+      '#######..#######', '#..............#', '#.####.##.####.#', '#.#..........#.#',
+      '#.#.###..###.#.#', '#...#......#...#', '#.#.#.#..#.#.#.#', '................',
+      '................', '#.#.#.#..#.#.#.#', '#...#......#...#', '#.#.###..###.#.#',
+      '#.#..........#.#', '#.####.##.####.#', '#..............#', '#######..#######'] },
+    { name: 'Rush', hint: 'Faster now. Breathe, and keep turning.', goal: 12, speed: 9.5, accel: 0.4, gold: true, pink: true, start: [1, 2, 1, 3], map: [
+      '................', '................', '................', '................',
+      '....########....', '....#......#....', '....#......#....', '................',
+      '................', '....#......#....', '....#......#....', '....########....',
+      '................', '................', '................', '................'] },
+    { name: 'Ouroboros', hint: 'The world has edges now. There is nothing left to eat.', goal: 0, speed: 7, accel: 0, finale: true, wrap: false, start: [3, 3, 1, 6], map: [
+      '################', '#..............#', '#..............#', '#..............#',
+      '#..............#', '#..............#', '#..............#', '#......GG......#',
+      '#......GG......#', '#..............#', '#..............#', '#..............#',
+      '#..............#', '#..............#', '#..............#', '################'] },
+  ];
+
+  function rng(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0; let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const key = (x, y) => y * W + x;
+
+  function buildLevel(def) {
+    const walls = new Uint8Array(W * H);          // 0 empty, 1 wall, 2 gem
+    def.map.forEach((row, y) => { for (let x = 0; x < W; x++) { const c = row[x]; if (c === '#') walls[key(x, y)] = 1; else if (c === 'G') walls[key(x, y)] = 2; } });
+    const L = Object.assign({ wrap: true, gold: false, pink: false, drift: false, finale: false }, def, { walls });
+    // cells reachable from the start, so bits never spawn in sealed pockets
+    const reach = new Uint8Array(W * H), q = [[def.start[0], def.start[1]]];
+    reach[key(def.start[0], def.start[1])] = 1;
+    while (q.length) {
+      const [x, y] = q.pop();
+      for (const [dx, dy] of DIRS) {
+        let nx = x + dx, ny = y + dy;
+        if (L.wrap) { nx = (nx + W) % W; ny = (ny + H) % H; } else if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        const k = key(nx, ny);
+        if (!reach[k] && !walls[k]) { reach[k] = 1; q.push([nx, ny]); }
+      }
+    }
+    L.reach = reach;
+    return L;
+  }
+
+  function endlessLevel(seed) {
+    const r = rng(seed);
+    for (let tries = 0; tries < 50; tries++) {
+      const map = Array.from({ length: H }, () => Array(W).fill('.'));
+      const n = 5 + Math.floor(r() * 6);
+      for (let i = 0; i < n; i++) {
+        const x = Math.floor(r() * W), y = Math.floor(r() * H), big = r() < 0.35;
+        map[y][x] = '#'; if (big && x < W - 1 && y < H - 1) { map[y][x + 1] = '#'; map[y + 1][x] = '#'; map[y + 1][x + 1] = '#'; }
+      }
+      for (let x = 0; x < 6; x++) map[8][x] = '.';               // keep the start lane clear
+      const def = { name: 'Endless', hint: 'How long can the loop grow?', goal: Infinity, speed: 7.5, accel: 0.12, gold: true, pink: true, drift: false,
+        start: [1, 8, 1, 3], map: map.map(r => r.join('')) };
+      const L = buildLevel(def);
+      let free = 0, reach = 0;
+      for (let k = 0; k < W * H; k++) { if (!L.walls[k]) free++; if (L.reach[k]) reach++; }
+      if (free === reach) return L;                              // every open cell connected
+    }
+    return buildLevel(Object.assign({}, LEVELS[0], { name: 'Endless', goal: Infinity, gold: true, pink: true }));
+  }
+
+  function newState(L, seed) {
+    const [sx, sy, dir, len] = L.start;
+    const snake = [];
+    for (let i = 0; i < len; i++) {
+      let x = sx - DIRS[dir][0] * i, y = sy - DIRS[dir][1] * i;
+      x = (x + W) % W; y = (y + H) % H;
+      snake.push([x, y]);
+    }
+    const st = { snake, prev: snake.map(s => s.slice()), dir, queue: [], grow: 0, bits: [], eaten: 0, steps: 0,
+      alive: true, won: false, closed: false, growEvery: 6, rand: rng(seed || 1), started: false };
+    if (!L.finale) spawn(L, st, 'bit');
+    return st;
+  }
+
+  function occupied(st, x, y) { for (const s of st.snake) if (s[0] === x && s[1] === y) return true; return false; }
+  function bitAt(st, x, y) { return st.bits.findIndex(b => b.x === x && b.y === y); }
+
+  function spawn(L, st, type) {
+    const head = st.snake[0], cells = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const k = key(x, y);
+      if (!L.reach[k] || L.walls[k] || occupied(st, x, y) || bitAt(st, x, y) >= 0) continue;
+      let dx = Math.abs(x - head[0]), dy = Math.abs(y - head[1]);
+      if (L.wrap) { dx = Math.min(dx, W - dx); dy = Math.min(dy, H - dy); }
+      if (dx + dy < 3) continue;                                  // not right under the snake's nose
+      cells.push([x, y]);
+    }
+    if (!cells.length) return null;
+    const [x, y] = cells[Math.floor(st.rand() * cells.length)];
+    const b = { x, y, type, ttl: type === 'gold' ? 46 : type === 'pink' ? 70 : Infinity, born: st.steps };
+    st.bits.push(b);
+    return b;
+  }
+
+  function turn(st, d) {
+    const last = st.queue.length ? st.queue[st.queue.length - 1] : st.dir;
+    if (d === last || (d + 2) % 4 === last) return false;          // no-op or reversing
+    if (st.queue.length < 2) st.queue.push(d);
+    st.started = true;
+    return true;
+  }
+
+  function interval(L, st) {
+    const sp = Math.min(16, L.speed + L.accel * st.eaten);
+    return 1000 / sp;
+  }
+
+  // Advance one cell. Returns a list of events for the renderer and audio.
+  function step(L, st) {
+    const ev = [];
+    if (!st.alive || st.won) return ev;
+    if (st.queue.length) st.dir = st.queue.shift();
+    st.prev = st.snake.map(s => s.slice());
+    st.steps++;
+    const head = st.snake[0], tail = st.snake[st.snake.length - 1];
+    let nx = head[0] + DIRS[st.dir][0], ny = head[1] + DIRS[st.dir][1];
+    let wrapped = false;
+    if (L.wrap) { if (nx < 0 || ny < 0 || nx >= W || ny >= H) wrapped = true; nx = (nx + W) % W; ny = (ny + H) % H; }
+    else if (nx < 0 || ny < 0 || nx >= W || ny >= H) { st.alive = false; ev.push({ type: 'die', cause: 'edge' }); return ev; }
+    if (L.walls[key(nx, ny)]) { st.alive = false; ev.push({ type: 'die', cause: L.walls[key(nx, ny)] === 2 ? 'gem' : 'wall', x: nx, y: ny }); return ev; }
+    // the finale: biting the tail closes the loop
+    if (L.finale && nx === tail[0] && ny === tail[1]) {
+      st.won = true; st.closed = true;
+      st.snake.unshift([nx, ny]); st.snake.pop();
+      ev.push({ type: 'closed' });
+      return ev;
+    }
+    const growing = st.grow > 0;
+    for (let i = 0; i < st.snake.length; i++) {
+      if (i === st.snake.length - 1 && !growing) break;              // the tail moves out of the way
+      const s = st.snake[i];
+      if (s[0] === nx && s[1] === ny) { st.alive = false; ev.push({ type: 'die', cause: 'self', x: nx, y: ny }); return ev; }
+    }
+    st.snake.unshift([nx, ny]);
+    if (growing) { st.grow--; st.prev.push(st.prev[st.prev.length - 1].slice()); } else st.snake.pop();
+    if (wrapped) ev.push({ type: 'wrap' });
+
+    const bi = bitAt(st, nx, ny);
+    if (bi >= 0) {
+      const b = st.bits.splice(bi, 1)[0];
+      st.eaten++;
+      if (b.type === 'gold') st.grow += 3;
+      else if (b.type === 'pink') {
+        let cut = 0;
+        while (cut < 2 && st.snake.length > 3) { st.snake.pop(); st.prev.pop(); cut++; }
+        st.grow = 0;
+      } else st.grow += 1;
+      ev.push({ type: 'eat', bit: b });
+      if (st.eaten >= L.goal) { st.won = true; ev.push({ type: 'clear' }); return ev; }
+      if (b.type === 'bit') spawn(L, st, 'bit');
+    }
+    if (!st.bits.some(b => b.type === 'bit') && !L.finale) spawn(L, st, 'bit');
+    // timed extras
+    for (const b of st.bits) if (b.ttl !== Infinity) b.ttl--;
+    const expired = st.bits.filter(b => b.ttl <= 0);
+    if (expired.length) { st.bits = st.bits.filter(b => b.ttl > 0); for (const b of expired) ev.push({ type: 'fade', bit: b }); }
+    if (L.gold && !st.bits.some(b => b.type === 'gold') && st.rand() < 0.035) { const b = spawn(L, st, 'gold'); if (b) ev.push({ type: 'spawn', bit: b }); }
+    if (L.pink && !st.bits.some(b => b.type === 'pink') && st.snake.length > 6 && st.rand() < 0.03) { const b = spawn(L, st, 'pink'); if (b) ev.push({ type: 'spawn', bit: b }); }
+    // drifting bits wander one cell every few steps
+    if (L.drift && st.steps % 3 === 0) {
+      for (const b of st.bits) {
+        const opts = DIRS.map(([dx, dy]) => [(b.x + dx + W) % W, (b.y + dy + H) % H])
+          .filter(([x, y]) => !L.walls[key(x, y)] && L.reach[key(x, y)] && !occupied(st, x, y) && bitAt(st, x, y) < 0);
+        if (opts.length) { const [x, y] = opts[Math.floor(st.rand() * opts.length)]; b.px = b.x; b.py = b.y; b.x = x; b.y = y; b.moved = st.steps; }
+      }
+    }
+    // the finale keeps growing: nothing to eat, nowhere to go
+    if (L.finale) { st.growEvery = Math.max(2, 6 - Math.floor(st.steps / 45)); if (st.steps % st.growEvery === 0) { st.grow++; ev.push({ type: 'grow' }); } }
+    return ev;
+  }
+
+  const api = { W, H, DIRS, LEVELS, buildLevel, endlessLevel, newState, turn, step, interval, rng, key };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.OB = api;
+})(this);
+
+</script>
+<script>
+(function () {
+'use strict';
+const $ = id => document.getElementById(id);
+const { W, H, DIRS, LEVELS } = OB;
+const CELL = 8, AW = W * CELL, AH = H * CELL;
+
+// ---------------- save ----------------
+const SK = 'ouroboros-v1';
+let save = { cleared: -1, best: {}, finished: false, endlessBest: 0, deaths: 0, time: 0, sfx: true, music: true };
+try { const s = JSON.parse(localStorage.getItem(SK)); if (s) save = Object.assign(save, s); } catch (e) {}
+const persist = () => { try { localStorage.setItem(SK, JSON.stringify(save)); } catch (e) {} };
+
+// ---------------- audio ----------------
+let AC = null, master, sfxG, musG, noiseBuf, musTimer = null, musNext = 0, musStep = 0, mood = 'calm';
+function audio() {
+  if (AC) { if (AC.state === 'suspended') AC.resume().catch(() => {}); return; }
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = 0.5; master.connect(AC.destination);
+    sfxG = AC.createGain(); sfxG.gain.value = save.sfx ? 1 : 0; sfxG.connect(master);
+    musG = AC.createGain(); musG.gain.value = save.music ? 0.18 : 0; musG.connect(master);
+    noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    startMusic();
+  } catch (e) { AC = null; }
+}
+function tone(f, dur, type, vol, slide, when, dest) {
+  if (!AC) return;
+  const t = AC.currentTime + (when || 0), o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || 'square'; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.1, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(dest || sfxG); o.start(t); o.stop(t + dur + 0.03);
+}
+function noise(dur, vol, freq) {
+  if (!AC) return;
+  const t = AC.currentTime, s = AC.createBufferSource(); s.buffer = noiseBuf;
+  const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq || 1000;
+  const g = AC.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(sfxG); s.start(t); s.stop(t + dur + 0.02);
+}
+const PENTA = [523, 587, 659, 784, 880, 1047, 1175, 1319, 1568, 1760];
+const SFX = {
+  eat(n) { const f = PENTA[Math.min(n, PENTA.length - 1)]; tone(f, 0.16, 'square', 0.07); tone(f * 1.5, 0.12, 'triangle', 0.05, null, 0.04); },
+  gold() { [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, 'triangle', 0.08, null, i * 0.04)); },
+  pink() { tone(660, 0.22, 'triangle', 0.09, 330); },
+  turn() { tone(220, 0.03, 'triangle', 0.025); },
+  wrap() { tone(1200, 0.06, 'sine', 0.03, 1800); },
+  die() { noise(0.4, 0.28, 700); tone(180, 0.35, 'sawtooth', 0.06, 50); },
+  clear() { [523, 659, 784, 1047, 1319].forEach((f, i) => { tone(f, 0.26, 'square', 0.05, null, i * 0.07); tone(f / 2, 0.3, 'triangle', 0.07, null, i * 0.07); }); },
+  grow() { tone(70, 0.22, 'sine', 0.22, 45); },
+  closed() { [392, 494, 587, 784, 988, 1175, 1568].forEach((f, i) => { tone(f, 0.6, 'triangle', 0.08, null, i * 0.11); }); tone(98, 2.4, 'sine', 0.2, 196); },
+  click() { tone(880, 0.04, 'square', 0.04); },
+};
+function startMusic() {
+  if (!AC || musTimer) return;
+  musNext = AC.currentTime + 0.1;
+  const scale = [293.7, 329.6, 349.2, 392, 440, 523.3, 587.3];        // D dorian, soft
+  const roots = [146.8, 130.8, 174.6, 164.8];
+  musTimer = setInterval(() => {
+    if (!AC) return;
+    while (musNext < AC.currentTime + 0.25) {
+      const t = musNext - AC.currentTime, bar = Math.floor(musStep / 8) % 4, beat = musStep % 8;
+      if (mood === 'finale') {
+        if (beat === 0) tone(roots[bar] / 2, 1.6, 'sine', 0.3, null, t, musG);
+        if (beat === 4 && Math.random() < 0.6) tone(scale[Math.floor(Math.random() * 3)] * 2, 0.9, 'sine', 0.05, null, t, musG);
+      } else {
+        if (beat === 0 || beat === 4) tone(roots[bar], 0.5, 'triangle', 0.28, null, t, musG);
+        if (Math.random() < (beat % 2 ? 0.3 : 0.62)) tone(scale[Math.floor(Math.random() * scale.length)] * (Math.random() < 0.3 ? 2 : 1), 0.24, beat % 2 ? 'triangle' : 'square', 0.05, null, t, musG);
+      }
+      musNext += 60 / 92 / 2; musStep++;
+    }
+  }, 60);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) { if (G.mode === 'play' && G.st && G.st.started && G.st.alive && !G.st.won) openPause(); if (AC) AC.suspend().catch(() => {}); } else if (AC) AC.resume().catch(() => {}); });
+
+// ---------------- canvas ----------------
+const cv = $('c'), ctx = cv.getContext('2d');
+const lo = document.createElement('canvas'), g = lo.getContext('2d');
+const arena = document.createElement('canvas'), ag = arena.getContext('2d');
+let S = 4, DPR = 1, ox = 0, oy = 0, stars = [];
+
+const G = { mode: 'title', kind: 'story', idx: 0, L: null, st: null, acc: 0, deaths: 0, lvlTime: 0, combo: 0, lastEat: -9,
+  particles: [], shake: 0, flash: 0, flashCol: '#fff', dieAt: 0, clearAt: 0, closedAt: 0, glowFrom: -1, finaleT: 0, hintStage: 0, demoT: 0 };
+
+function fit() {
+  DPR = Math.min(window.devicePixelRatio || 1, 3);
+  const Wc = innerWidth, Hc = innerHeight;
+  cv.width = Math.round(Wc * DPR); cv.height = Math.round(Hc * DPR);
+  const top = 96, bottom = 120;
+  const availW = Wc * 0.92, availH = Math.max(160, Hc - top - bottom);
+  S = Math.max(2, Math.floor(Math.min(availW * DPR / AW, availH * DPR / AH)));
+  lo.width = Math.ceil(cv.width / S); lo.height = Math.ceil(cv.height / S);
+  ox = Math.floor((lo.width - AW) / 2);
+  oy = Math.floor(((top + availH / 2) * DPR) / S - AH / 2);
+  const capY = (oy + AH) * S / DPR + 14;
+  $('cap').style.top = capY + 'px'; $('start').style.top = (oy * S / DPR - 26) + 'px';
+  stars = Array.from({ length: Math.round(lo.width * lo.height / 700) }, () => ({ x: Math.random() * lo.width, y: Math.random() * lo.height,
+    c: ['#cfd8ff', '#7ff3e0', '#ffcf5a', '#ff9ec7', '#ffffff'][Math.floor(Math.random() * 5)], p: Math.random() * 6.28, s: 0.4 + Math.random() * 1.2, b: 0.15 + Math.random() * 0.6 }));
+  if (G.L) buildArena();
+}
+addEventListener('resize', fit);
+
+function hsh(x, y) { let h = x * 374761393 + y * 668265263; h = (h ^ (h >>> 13)) * 1274126177; return (h ^ (h >>> 16)) >>> 0; }
+function buildArena() {
+  arena.width = AW; arena.height = AH; ag.clearRect(0, 0, AW, AH);
+  ag.fillStyle = 'rgba(255,255,255,0.03)'; ag.fillRect(0, 0, AW, AH);
+  const L = G.L;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const w = L.walls[y * W + x], px = x * CELL, py = y * CELL;
+    if (!w) { ag.fillStyle = 'rgba(207,216,255,0.10)'; ag.fillRect(px + 3, py + 3, 1, 1); continue; }
+    if (w === 2) continue;                                   // the gem is drawn live
+    const up = y > 0 && L.walls[(y - 1) * W + x] === 1, dn = y < H - 1 && L.walls[(y + 1) * W + x] === 1;
+    const lf = x > 0 && L.walls[y * W + x - 1] === 1, rt = x < W - 1 && L.walls[y * W + x + 1] === 1;
+    ag.fillStyle = '#3e414d'; ag.fillRect(px, py, CELL, CELL);
+    ag.fillStyle = '#6a6e7c'; if (!up) ag.fillRect(px, py, CELL, 1); if (!lf) ag.fillRect(px, py, 1, CELL);
+    ag.fillStyle = '#24262e'; if (!dn) ag.fillRect(px, py + CELL - 1, CELL, 1); if (!rt) ag.fillRect(px + CELL - 1, py, 1, CELL);
+    const h = hsh(x, y);
+    ag.fillStyle = '#2c2e37'; ag.fillRect(px + 2 + h % 4, py + 2 + (h >> 4) % 4, 1, 1);
+    if (h % 7 === 0) { ag.fillStyle = '#ffcf5a'; ag.fillRect(px + 3 + (h >> 6) % 2, py + 3 + (h >> 8) % 2, 1, 1); }
+  }
+}
+
+// ---------------- levels ----------------
+function startLevel(idx, kind) {
+  G.kind = kind || 'story'; G.idx = idx;
+  G.L = G.kind === 'endless' ? OB.endlessLevel((Math.random() * 1e9) | 0) : OB.buildLevel(LEVELS[idx]);
+  G.st = OB.newState(G.L, (Math.random() * 1e9) | 0);
+  G.acc = 0; G.lvlTime = 0; G.combo = 0; G.particles = []; G.glowFrom = -1; G.finaleT = 0; G.hintStage = 0;
+  G.mode = 'play'; mood = G.L.finale ? 'finale' : 'calm';
+  buildArena(); show(null); updateHud();
+  $('cap').textContent = G.L.hint; $('cap').style.opacity = 1;
+  $('start').textContent = matchMedia('(pointer:coarse)').matches ? 'SWIPE TO START' : 'PRESS AN ARROW TO START';
+  $('start').classList.remove('hidden');
+  if (G.kind === 'story' && idx === LEVELS.length - 1 && G.deaths >= 2) $('cap').textContent = 'Close the loop.';
+}
+function restartLevel() { const d = G.deaths; startLevel(G.idx, G.kind); G.deaths = d; }
+function updateHud() {
+  const L = G.L, st = G.st;
+  if (G.kind === 'endless') { $('hNum').textContent = 'ENDLESS · BEST ' + save.endlessBest; $('hName').textContent = 'ENDLESS'; $('hBits').innerHTML = '<b>' + st.eaten + '</b>'; }
+  else {
+    $('hNum').textContent = 'LEVEL ' + (G.idx + 1) + ' / ' + LEVELS.length;
+    $('hName').textContent = L.name.toUpperCase();
+    $('hBits').innerHTML = L.finale ? '<b>?</b>' : '<b>' + st.eaten + '</b>/' + L.goal;
+  }
+  $('hSub').textContent = 'LENGTH ' + st.snake.length + (G.deaths ? ' · TRIES ' + (G.deaths + 1) : '');
+}
+
+// ---------------- input ----------------
+function steer(d) {
+  if (G.mode !== 'play' || !G.st || !G.st.alive || G.st.won) return;
+  audio();
+  const was = G.st.started;
+  if (OB.turn(G.st, d)) SFX.turn();
+  if (!was) { G.st.started = true; $('start').classList.add('hidden'); }
+}
+const KEYS = { arrowup: 0, w: 0, arrowright: 1, d: 1, arrowdown: 2, s: 2, arrowleft: 3, a: 3 };
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k in KEYS) { e.preventDefault(); if (G.mode === 'play') { if (!G.st.started) { G.st.started = true; $('start').classList.add('hidden'); OB.turn(G.st, KEYS[k]); } else steer(KEYS[k]); } }
+  else if (k === 'escape' || k === 'p') { if (G.mode === 'play') openPause(); else if (G.mode === 'pause') resume(); }
+  else if (k === 'r' && G.mode === 'play') restartLevel();
+  else if ((k === 'enter' || k === ' ') && G.mode === 'clear') $('cNext').click();
+});
+let sw = null;
+cv.addEventListener('pointerdown', e => { audio(); sw = { x: e.clientX, y: e.clientY }; });
+addEventListener('pointermove', e => {
+  if (!sw || G.mode !== 'play') return;
+  const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+  if (Math.hypot(dx, dy) > 18) {
+    const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0);
+    if (!G.st.started) { G.st.started = true; $('start').classList.add('hidden'); OB.turn(G.st, d); } else steer(d);
+    sw = { x: e.clientX, y: e.clientY };                     // keep swiping without lifting the finger
+  }
+});
+addEventListener('pointerup', () => sw = null);
+addEventListener('pointercancel', () => sw = null);
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+// ---------------- game loop ----------------
+function burst(x, y, n, cols, spd, life) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * 6.283, v = (0.3 + Math.random()) * spd;
+    G.particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: life * (0.5 + Math.random() * 0.7), max: life, c: cols[i % cols.length] });
+  }
+}
+function onEvents(ev) {
+  const st = G.st, L = G.L, h = st.snake[0];
+  for (const e of ev) {
+    if (e.type === 'eat') {
+      const now = G.lvlTime; G.combo = now - G.lastEat < 2.2 ? G.combo + 1 : 0; G.lastEat = now;
+      const cx = e.bit.x * CELL + 4, cy = e.bit.y * CELL + 4;
+      if (e.bit.type === 'gold') { SFX.gold(); burst(cx, cy, 26, ['#ffcf5a', '#fff4c9', '#e09a2b'], 0.09, 650); G.flash = 1; G.flashCol = '#ffcf5a'; }
+      else if (e.bit.type === 'pink') { SFX.pink(); burst(cx, cy, 18, ['#ff7ab8', '#ffd6ea'], 0.07, 550); }
+      else { SFX.eat(G.combo); burst(cx, cy, 14, ['#7ff3e0', '#ffffff', '#b8fbf6'], 0.07, 500); }
+      G.shake = Math.max(G.shake, 1.2);
+    } else if (e.type === 'wrap') SFX.wrap();
+    else if (e.type === 'die') {
+      SFX.die(); G.shake = 5; G.flash = 1; G.flashCol = '#ff7ab8'; G.dieAt = performance.now(); G.deaths++; save.deaths++; persist();
+      for (const [x, y] of st.snake) burst(x * CELL + 4, y * CELL + 4, 3, ['#7ff3e0', '#2c8f8a', '#6c5bd8'], 0.08, 700);
+      toast(e.cause === 'self' ? 'BIT YOURSELF' : e.cause === 'edge' ? 'OFF THE EDGE' : e.cause === 'gem' ? 'NOT THE GEM' : 'HIT A WALL');
+    } else if (e.type === 'clear') {
+      SFX.clear(); G.clearAt = performance.now(); G.glowFrom = performance.now();
+      burst(h[0] * CELL + 4, h[1] * CELL + 4, 30, ['#ffcf5a', '#7ff3e0', '#ffffff'], 0.1, 800);
+    } else if (e.type === 'closed') {
+      SFX.closed(); G.closedAt = performance.now(); G.glowFrom = performance.now(); G.flash = 1; G.flashCol = '#ffcf5a';
+      $('cap').textContent = ''; mood = 'calm';
+    } else if (e.type === 'grow') { SFX.grow(); G.shake = Math.max(G.shake, 0.6); }
+  }
+  if (ev.length) updateHud();
+}
+let last = performance.now();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (G.mode === 'play' && G.st) {
+    const st = G.st, L = G.L;
+    if (st.started && st.alive && !st.won) {
+      G.lvlTime += dt;
+      G.acc += dt * 1000;
+      const iv = OB.interval(L, st);
+      while (G.acc >= iv && st.alive && !st.won) { G.acc -= iv; onEvents(OB.step(L, st)); }
+      if (L.finale) finaleHints();
+    }
+    if (!st.alive && now - G.dieAt > 950) restartLevel();
+    if (st.won && !st.closed && G.clearAt && now - G.clearAt > 1100 && G.mode === 'play') { G.clearAt = 0; levelDone(); }
+    if (st.closed && G.closedAt && now - G.closedAt > 3600 && G.mode === 'play') { G.closedAt = 0; finish(); }
+  }
+  render(now, dt);
+}
+function finaleHints() {
+  const t = G.lvlTime, cap = $('cap');
+  const stages = [[6, 'Hungry?'], [14, 'Something has been following you all along.'], [22, 'Every loop needs an end. Close the loop.']];
+  for (let i = G.hintStage; i < stages.length; i++) if (t > stages[i][0]) { cap.textContent = stages[i][1]; G.hintStage = i + 1; }
+}
+
+// ---------------- render ----------------
+const RA = [1, 0.26, 0.11, 0.05];
+function lerpPos(p, c, t) {
+  let dx = c[0] - p[0], dy = c[1] - p[1];
+  if (dx > 1) dx -= W; else if (dx < -1) dx += W;
+  if (dy > 1) dy -= H; else if (dy < -1) dy += H;
+  return [p[0] + dx * t, p[1] + dy * t];
+}
+function bodyColor(i, n) {
+  const t = n > 1 ? i / (n - 1) : 0;
+  const a = [127, 243, 224], b = [44, 143, 138], c = [108, 91, 216];
+  const m = t < 0.5 ? [a, b, t * 2] : [b, c, (t - 0.5) * 2];
+  return `rgb(${m[0].map((v, k) => Math.round(v + (m[1][k] - v) * m[2])).join(',')})`;
+}
+function render(now, dt) {
+  const Wl = lo.width, Hl = lo.height;
+  g.globalAlpha = 1; g.fillStyle = '#05060f'; g.fillRect(0, 0, Wl, Hl);
+  const grd = g.createRadialGradient(Wl / 2, Hl * 0.45, 4, Wl / 2, Hl * 0.45, Math.max(Wl, Hl) * 0.7);
+  grd.addColorStop(0, 'rgba(60,40,120,0.35)'); grd.addColorStop(1, 'rgba(5,6,15,0)'); g.fillStyle = grd; g.fillRect(0, 0, Wl, Hl);
+  for (const s of stars) { g.globalAlpha = s.b * (0.55 + 0.45 * Math.sin(now / 1000 * s.s + s.p)); g.fillStyle = s.c; g.fillRect(s.x | 0, s.y | 0, 1, 1); }
+  g.globalAlpha = 1;
+  if (G.mode === 'title' || G.mode === 'ending' || !G.L) { if (!$('title').classList.contains('hidden')) renderDemo(now); else if (G.mode === 'ending') renderEndGlow(now); blit(); return; }
+  const L = G.L, st = G.st;
+  G.shake = Math.max(0, G.shake - dt * 14);
+  const sx = Math.round((Math.random() - 0.5) * G.shake), sy = Math.round((Math.random() - 0.5) * G.shake);
+  const X0 = ox + sx, Y0 = oy + sy;
+  const wrap = L.wrap;
+  const span = wrap ? 2 : 0;
+  // arena copies: the world repeats while it wraps
+  for (let j = -span; j <= span; j++) for (let i = -span; i <= span; i++) {
+    const r = Math.max(Math.abs(i), Math.abs(j));
+    g.globalAlpha = RA[r]; g.drawImage(arena, X0 + i * AW, Y0 + j * AH);
+  }
+  g.globalAlpha = 1;
+  // frame brackets
+  g.fillStyle = L.finale ? '#ffcf5a' : '#7ff3e0'; g.globalAlpha = 0.6;
+  const fx = X0 - 3, fy = Y0 - 3, fw = AW + 6, fh = AH + 6;
+  for (const [x, y, w, h] of [[fx, fy, 6, 1], [fx, fy, 1, 6], [fx + fw - 6, fy, 6, 1], [fx + fw - 1, fy, 1, 6], [fx, fy + fh - 1, 6, 1], [fx, fy + fh - 6, 1, 6], [fx + fw - 6, fy + fh - 1, 6, 1], [fx + fw - 1, fy + fh - 6, 1, 6]]) g.fillRect(x, y, w, h);
+  g.globalAlpha = 1;
+  const each = (px, py, fn) => {
+    for (let j = -span; j <= span; j++) for (let i = -span; i <= span; i++) {
+      const X = Math.round(X0 + px + i * AW), Y = Math.round(Y0 + py + j * AH);
+      if (X < -10 || Y < -10 || X > Wl + 2 || Y > Hl + 2) continue;
+      const rx = Math.floor((X + 4 - X0) / AW), ry = Math.floor((Y + 4 - Y0) / AH);
+      g.globalAlpha = RA[Math.min(3, Math.max(Math.abs(rx), Math.abs(ry)))];
+      fn(X, Y);
+    }
+    g.globalAlpha = 1;
+  };
+  // the gem (finale)
+  if (L.finale) {
+    const gx = X0 + 7 * CELL, gy = Y0 + 7 * CELL, pulse = 0.5 + 0.5 * Math.sin(now / 400);
+    g.globalAlpha = 0.18 + 0.12 * pulse; g.fillStyle = '#ffcf5a'; g.fillRect(gx - 6, gy - 6, 28, 28); g.globalAlpha = 0.25; g.fillRect(gx - 2, gy - 2, 20, 20); g.globalAlpha = 1;
+    drawGem(gx + 8, gy + 8, 6);
+  }
+  // bits
+  const t = st.started && st.alive && !st.won ? Math.min(1, G.acc / OB.interval(L, st)) : (st.won ? 1 : 0);
+  for (const b of st.bits) {
+    let bx = b.x, by = b.y;
+    if (b.moved === st.steps && b.px !== undefined) { const p = lerpPos([b.px, b.py], [b.x, b.y], t); bx = p[0]; by = p[1]; }
+    const bob = Math.round(Math.sin(now / 260 + b.x) * 0.8);
+    if (b.type === 'gold' && b.ttl < 12 && Math.floor(now / 120) % 2) continue;
+    each(bx * CELL, by * CELL + bob, (X, Y) => drawBit(X, Y, b.type, now));
+  }
+  // snake
+  const n = st.snake.length, alive = st.alive || now - G.dieAt < 60;
+  if (alive) {
+    const pos = st.snake.map((c, i) => lerpPos(st.prev[i] || c, c, t));
+    for (let i = n - 1; i >= 0; i--) {
+      const [px, py] = pos[i];
+      let col = bodyColor(i, n);
+      if (G.glowFrom > 0) { const k = (now - G.glowFrom) / 45; if (k > i) col = (Math.floor(k - i) % 2 && st.closed) ? '#fff4c9' : '#ffcf5a'; }
+      if (i < n - 1) {
+        const [qx, qy] = pos[i + 1], d = Math.abs(qx - px) + Math.abs(qy - py);
+        if (d < 1.6) each((px + qx) / 2 * CELL, (py + qy) / 2 * CELL, (X, Y) => { g.fillStyle = col; g.fillRect(X + 1, Y + 1, 6, 6); });
+      }
+      if (i === n - 1) {                                       // the tail tip: a small spark, foreshadowing
+        const p = 0.5 + 0.5 * Math.sin(now / (L.finale ? 180 : 420));
+        each(px * CELL, py * CELL, (X, Y) => {
+          const a0 = g.globalAlpha;
+          g.globalAlpha = a0 * (L.finale ? 0.3 + 0.35 * p : 0.12 + 0.1 * p); g.fillStyle = '#fff4c9'; g.fillRect(X + 1, Y + 3, 6, 2); g.fillRect(X + 3, Y + 1, 2, 6);
+          g.globalAlpha = a0; g.fillStyle = G.glowFrom > 0 ? col : bodyColor(n - 1, n); g.fillRect(X + 2, Y + 2, 4, 4); g.fillStyle = '#fff4c9'; g.fillRect(X + 3, Y + 3, 2, 2);
+        });
+        continue;
+      }
+      each(px * CELL, py * CELL, (X, Y) => {
+        g.fillStyle = col; g.fillRect(X + 1, Y, 6, 8); g.fillRect(X, Y + 1, 8, 6);
+        if (i === 0) drawHead(X, Y, st.dir, now);
+        else if (i % 3 === 0) { g.fillStyle = 'rgba(255,255,255,0.18)'; g.fillRect(X + 2, Y + 2, 2, 1); }
+      });
+    }
+  }
+  // particles
+  for (const p of G.particles) { p.x += p.vx * dt * 1000; p.y += p.vy * dt * 1000; p.vx *= 0.985; p.vy *= 0.985; p.life -= dt * 1000; }
+  G.particles = G.particles.filter(p => p.life > 0);
+  for (const p of G.particles) { g.globalAlpha = Math.min(1, p.life / p.max * 1.4); g.fillStyle = p.c; g.fillRect(Math.round(X0 + p.x), Math.round(Y0 + p.y), 1, 1); }
+  g.globalAlpha = 1;
+  // closing the loop: the snake dissolves into light that pours into the gem
+  if (st.closed) {
+    const k = (now - G.closedAt) / 3600;
+    if (k > 0.35 && Math.random() < 0.6) { const s = st.snake[Math.floor(Math.random() * n)]; G.particles.push({ x: s[0] * CELL + 4, y: s[1] * CELL + 4, vx: (64 - s[0] * CELL) / 900, vy: (64 - s[1] * CELL) / 900, life: 900, max: 900, c: Math.random() < 0.5 ? '#ffcf5a' : '#fff4c9' }); }
+    if (k > 0.75) { g.globalAlpha = Math.min(1, (k - 0.75) * 4) * 0.6; g.fillStyle = '#fff4c9'; g.fillRect(0, 0, Wl, Hl); g.globalAlpha = 1; }
+  }
+  G.flash = Math.max(0, G.flash - dt * 5);
+  if (G.flash > 0) { g.globalAlpha = G.flash * 0.18; g.fillStyle = G.flashCol; g.fillRect(0, 0, Wl, Hl); g.globalAlpha = 1; }
+  blit();
+}
+function blit() { ctx.imageSmoothingEnabled = false; ctx.drawImage(lo, 0, 0, lo.width * S, lo.height * S); }
+function drawHead(X, Y, dir, now) {
+  g.fillStyle = '#b8fbf6'; g.fillRect(X + 1, Y, 6, 1);
+  const [dx, dy] = DIRS[dir];
+  g.fillStyle = '#0b0a1f';
+  const blink = (now % 3800) < 120;
+  if (dx !== 0) { const ex = X + (dx > 0 ? 5 : 2); g.fillRect(ex, Y + 2, 1, blink ? 1 : 2); g.fillRect(ex, Y + 5, 1, blink ? 1 : 2); }
+  else { const ey = Y + (dy > 0 ? 5 : 2); g.fillRect(X + 2, ey, blink ? 1 : 2, 1); g.fillRect(X + 5, ey, blink ? 1 : 2, 1); }
+  if ((now % 2600) < 160) { g.fillStyle = '#ff7ab8'; g.fillRect(X + 3 + dx * 5, Y + 3 + dy * 5, dx ? 2 : 1, dy ? 2 : 1); }
+}
+function drawBit(X, Y, type, now) {
+  const a0 = g.globalAlpha;
+  const col = type === 'gold' ? ['#fff4c9', '#ffcf5a', '#c97a18'] : type === 'pink' ? ['#ffd6ea', '#ff7ab8', '#b8336f'] : ['#d8fffa', '#7ff3e0', '#2c8f8a'];
+  g.globalAlpha = a0 * (0.16 + 0.08 * Math.sin(now / 300)); g.fillStyle = col[1]; g.fillRect(X + 1, Y - 1, 6, 10); g.fillRect(X - 1, Y + 1, 10, 6); g.fillRect(X, Y, 8, 8); g.globalAlpha = a0;
+  if (type === 'gold') {
+    const P = [[3, 0], [4, 0], [2, 1], [5, 1], [0, 3], [7, 3], [0, 4], [7, 4], [2, 6], [5, 6], [3, 7], [4, 7]];
+    g.fillStyle = col[1]; g.fillRect(X + 1, Y + 1, 6, 6); g.fillStyle = col[0]; g.fillRect(X + 2, Y + 2, 2, 2); g.fillStyle = col[2]; g.fillRect(X + 5, Y + 5, 1, 1);
+    g.fillStyle = col[1]; for (const [i, j] of P) g.fillRect(X + i, Y + j, 1, 1);
+  } else {
+    g.fillStyle = col[1]; g.fillRect(X + 3, Y + 1, 2, 6); g.fillRect(X + 1, Y + 3, 6, 2); g.fillRect(X + 2, Y + 2, 4, 4);
+    g.fillStyle = col[0]; g.fillRect(X + 3, Y + 2, 1, 1); g.fillRect(X + 2, Y + 3, 1, 1);
+    g.fillStyle = col[2]; g.fillRect(X + 4, Y + 5, 1, 1); g.fillRect(X + 5, Y + 4, 1, 1);
+    if (type === 'pink') { g.fillStyle = '#ffffff'; g.fillRect(X + 3, Y + 3, 2, 1); }
+  }
+}
+function drawGem(cx, cy, r) {
+  for (let y = -r; y <= r; y++) {
+    const w = r - Math.abs(y);
+    for (let x = -w; x <= w; x++) {
+      let c = '#ffcf5a';
+      if (x < 0 && y < 0) c = '#fff4c9'; else if (x > 0 && y > 0) c = '#c97a18'; else if (x > 0 || y > 0) c = '#e9a233';
+      g.fillStyle = c; g.fillRect(cx + x, cy + y, 1, 1);
+    }
+  }
+  g.fillStyle = '#ffffff'; g.fillRect(cx - 2, cy - 2, 1, 1);
+}
+// title screen: an ouroboros circling the gem
+function renderEndGlow(now) {
+  const Wl = lo.width, Hl = lo.height;
+  for (let i = 0; i < 2; i++) if (Math.random() < 0.5) G.particles.push({ x: Math.random() * Wl, y: Hl + 2, vx: 0, vy: -(0.01 + Math.random() * 0.02), life: 3000, max: 3000, c: Math.random() < 0.6 ? '#ffcf5a' : '#fff4c9' });
+  for (const p of G.particles) { p.y += p.vy * 16; p.life -= 16; }
+  G.particles = G.particles.filter(p => p.life > 0 && p.y > -2);
+  for (const p of G.particles) { g.globalAlpha = Math.min(1, p.life / p.max) * 0.7; g.fillStyle = p.c; g.fillRect(p.x | 0, p.y | 0, 1, 1); }
+  g.globalAlpha = 1;
+}
+function renderDemo(now) {
+  const Wl = lo.width, r = $('emblem').getBoundingClientRect();
+  const cx = (r.left + r.width / 2) * DPR / S, cy = (r.top + r.height / 2) * DPR / S, R = Math.max(10, r.width * DPR / S * 0.4);
+  const n = Math.max(20, Math.round(R * 1.15)), t = now / 1400, gap = 6.283 / (n + 3);
+  const pu = 0.5 + 0.5 * Math.sin(now / 500); g.globalAlpha = 0.12 + 0.08 * pu; g.fillStyle = '#ffcf5a';
+  for (let k = 0; k < 3; k++) { const e = 6 + k * 4; g.fillRect(Math.round(cx) - e, Math.round(cy) - e, e * 2, e * 2); }
+  g.globalAlpha = 1; drawGem(Math.round(cx), Math.round(cy), 6);
+  for (let i = n - 1; i >= 0; i--) {
+    const a = t - i * gap, x = Math.round(cx + Math.cos(a) * R) - 2, y = Math.round(cy + Math.sin(a) * R) - 2;
+    g.globalAlpha = 0.95; g.fillStyle = bodyColor(i, n); g.fillRect(x, y, 5, 5);
+    if (i === n - 1) { g.fillStyle = '#fff4c9'; g.fillRect(x + 1, y + 1, 3, 3); }
+  }
+  const a = t, x = Math.round(cx + Math.cos(a) * R) - 3, y = Math.round(cy + Math.sin(a) * R) - 3;
+  g.globalAlpha = 1; g.fillStyle = '#7ff3e0'; g.fillRect(x, y, 7, 7); g.fillStyle = '#0b0a1f'; g.fillRect(x + 2, y + 2, 1, 1); g.fillRect(x + 4, y + 2, 1, 1);
+}
+
+// ---------------- screens ----------------
+function show(id) {
+  for (const s of ['title', 'levels', 'pause', 'clear', 'ending']) $(s).classList.toggle('hidden', s !== id);
+  const playing = G.mode === 'play' || G.mode === 'pause' || G.mode === 'clear';
+  $('hud').classList.toggle('hidden', !playing); $('ctrl').classList.toggle('hidden', !playing || id !== null);
+  $('cap').classList.toggle('hidden', !playing || id !== null);
+  if (id !== null) $('start').classList.add('hidden');
+  if (id === 'title') refreshTitle();
+}
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 800); }
+function fmt(s) { const m = Math.floor(s / 60), r = Math.floor(s % 60); return m + ':' + String(r).padStart(2, '0'); }
+function refreshTitle() {
+  $('tSfx').textContent = 'SFX ' + (save.sfx ? 'ON' : 'OFF'); $('tMusic').textContent = 'MUSIC ' + (save.music ? 'ON' : 'OFF');
+  $('pSfx').textContent = 'SFX ' + (save.sfx ? 'ON' : 'OFF'); $('pMusic').textContent = 'MUSIC ' + (save.music ? 'ON' : 'OFF');
+  $('tPlay').textContent = save.cleared >= 0 && !save.finished ? 'CONTINUE' : 'PLAY';
+  $('tEndless').textContent = 'ENDLESS';
+  $('tEndless').disabled = !save.finished;
+  $('tStats').textContent = save.finished ? 'LOOP CLOSED · ENDLESS BEST ' + save.endlessBest : (save.cleared + 1) + ' / ' + LEVELS.length + ' LEVELS · FINISH TO UNLOCK ENDLESS';
+}
+function buildGrid() {
+  const gr = $('grid'); gr.innerHTML = '';
+  LEVELS.forEach((d, i) => {
+    const b = document.createElement('button'), locked = i > save.cleared + 1, fin = d.finale && !save.finished && locked;
+    b.innerHTML = `<span class="n">${locked ? '·' : i + 1}</span><span class="t">${locked ? '' : (d.finale && !save.finished ? '???' : d.name.toUpperCase())}</span>`;
+    if (i <= save.cleared) b.classList.add('done');
+    if (locked) b.disabled = true; else b.onclick = () => { SFX.click(); G.deaths = 0; startLevel(i); };
+    gr.appendChild(b);
+  });
+}
+function openPause() { if (G.mode !== 'play') return; G.mode = 'pause'; refreshTitle(); show('pause'); }
+function resume() { G.mode = 'play'; show(null); last = performance.now(); }
+function levelDone() {
+  const i = G.idx, tsec = G.lvlTime;
+  if (G.kind === 'story') {
+    save.cleared = Math.max(save.cleared, i); save.time += tsec;
+    if (!save.best[i] || tsec < save.best[i]) save.best[i] = tsec; persist();
+    $('cTitle').textContent = 'CLEAR';
+    $('cInfo').innerHTML = `${LEVELS[i].name.toUpperCase()}<br>TIME ${fmt(tsec)} · BEST ${fmt(save.best[i])}<br>${G.deaths ? 'TRIES ' + (G.deaths + 1) : 'FIRST TRY'}`;
+    $('cNext').textContent = i === LEVELS.length - 2 ? 'ONWARD' : 'NEXT';
+  }
+  G.mode = 'clear'; show('clear');
+}
+function finish() {
+  save.finished = true; save.cleared = LEVELS.length - 1; save.time += G.lvlTime; persist();
+  $('eInfo').innerHTML = `You ate the last thing left in the world: yourself.<br>The loop is closed.<br><br>TOTAL TIME ${fmt(save.time)} · TRIES ${save.deaths + LEVELS.length}`;
+  G.mode = 'ending'; G.L = null; G.particles = []; show('ending');
+}
+function endlessOver() {
+  const sc = G.st.eaten; if (sc > save.endlessBest) save.endlessBest = sc; persist();
+  $('cTitle').textContent = 'LOOP BROKEN';
+  $('cInfo').innerHTML = `BITS ${sc}<br>BEST ${save.endlessBest}`;
+  $('cNext').textContent = 'AGAIN';
+  G.mode = 'clear'; show('clear');
+}
+// endless: dying ends the run instead of restarting
+const _restart = restartLevel;
+restartLevel = function () { if (G.kind === 'endless' && G.st && !G.st.alive) { endlessOver(); return; } _restart(); };
+
+const tap = (id, fn) => $(id).addEventListener('click', e => { audio(); SFX.click(); fn(e); });
+tap('tPlay', () => { G.deaths = 0; startLevel(save.finished ? 0 : Math.min(save.cleared + 1, LEVELS.length - 1)); });
+tap('tLevels', () => { buildGrid(); show('levels'); });
+tap('tEndless', () => { G.deaths = 0; startLevel(0, 'endless'); });
+tap('tSfx', () => { save.sfx = !save.sfx; if (sfxG) sfxG.gain.value = save.sfx ? 1 : 0; persist(); refreshTitle(); });
+tap('tMusic', () => { save.music = !save.music; if (musG) musG.gain.value = save.music ? 0.18 : 0; persist(); refreshTitle(); });
+tap('pSfx', () => $('tSfx').click());
+tap('pMusic', () => $('tMusic').click());
+tap('lBack', () => show('title'));
+tap('bMenu', openPause);
+tap('bRestart', () => { if (G.st && G.st.alive && !G.st.won) restartLevel(); });
+tap('pResume', resume);
+tap('pRestart', () => { G.mode = 'play'; restartLevel(); });
+tap('pLevels', () => { G.mode = 'title'; buildGrid(); show('levels'); });
+tap('pTitle', () => { G.mode = 'title'; G.L = null; show('title'); });
+tap('cRetry', () => { if (G.kind === 'endless') { startLevel(0, 'endless'); return; } G.deaths = 0; startLevel(G.idx); });
+tap('cNext', () => {
+  if (G.kind === 'endless') { startLevel(0, 'endless'); return; }
+  G.deaths = 0;
+  if (G.idx < LEVELS.length - 1) startLevel(G.idx + 1); else { G.mode = 'title'; G.L = null; show('title'); }
+});
+tap('eEndless', () => { G.deaths = 0; startLevel(0, 'endless'); });
+tap('eTitle', () => { G.mode = 'title'; G.L = null; show('title'); });
+tap('eBP', () => { location.href = '../index.html'; });
+
+fit(); show('title'); requestAnimationFrame(frame);
+window.__G = G; window.__steer = steer; window.__OB = OB;
+})();
+</script>
+</body>
+</html>
