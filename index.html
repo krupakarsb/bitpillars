@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>BitPillars · tiny pixel games, free in your browser</title>
 <meta name="description" content="BitPillars Games: tiny pixel games made for fun. Free to play in your browser on phone or desktop. No installs, no ads, no accounts.">
-<meta name="theme-color" content="#070818">
+<meta name="theme-color" content="#04050d">
 <link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="brand/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="brand/apple-touch-icon-180.png">
@@ -20,11 +20,18 @@
 <style>
   :root { --gold:#ffcf5a; --gold-dk:#c97a18; --cream:#f4efe6; --ink:#0b0a1f; --orb:220px; }
   * { box-sizing:border-box; }
-  html, body { margin:0; height:100%; overflow:hidden; background:#070818; color:var(--cream);
+  html, body { margin:0; height:100%; overflow:hidden; background:#04050d; color:var(--cream);
     font-family:'Silkscreen',monospace; -webkit-tap-highlight-color:transparent; overscroll-behavior:none; }
+  .sky { position:fixed; inset:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse 60% 45% at 50% 62%, rgba(255,190,90,.10), rgba(255,190,90,0) 70%),
+      radial-gradient(ellipse 50% 40% at 18% 22%, rgba(110,80,220,.16), rgba(110,80,220,0) 70%),
+      radial-gradient(ellipse 45% 35% at 85% 30%, rgba(60,170,190,.12), rgba(60,170,190,0) 70%),
+      radial-gradient(ellipse 70% 50% at 70% 95%, rgba(224,80,158,.08), rgba(224,80,158,0) 70%),
+      linear-gradient(180deg, #04050d 0%, #080a1c 45%, #0b0a1f 100%); }
   #wall { position:fixed; inset:0; width:100%; height:100%; image-rendering:pixelated; display:block; }
   .vignette { position:fixed; inset:0; pointer-events:none;
-    background:radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 50%, rgba(4,5,16,.55) 100%); }
+    background:radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 55%, rgba(2,3,10,.6) 100%); }
 
   /* ---------- header ---------- */
   .brand { position:fixed; z-index:5; top:max(18px, env(safe-area-inset-top)); left:clamp(16px,4vw,48px);
@@ -94,6 +101,7 @@
 </style>
 </head>
 <body>
+<div class="sky"></div>
 <canvas id="wall" aria-hidden="true"></canvas>
 <div class="vignette"></div>
 
@@ -164,16 +172,14 @@ const GAMES = [
     location.href = g.href;
   }
 
-  const GROUND = 0.86;                                   // shared with the wallpaper
-  let floatT = 0;
+  let floatT = 0, pedBase = 0;
   function layout() {
     const W = innerWidth, H = innerHeight, mobile = W < 700;
-    const pedH = Math.min(mobile ? H * 0.36 : H * 0.38, 420, W * (mobile ? 0.9 : 0.5));
+    const pedH = Math.min(mobile ? H * 0.4 : H * 0.44, 460, W * (mobile ? 0.95 : 0.55));
     ped.style.height = pedH + 'px'; ped.style.width = pedH + 'px';
-    const groundY = H * GROUND;
-    const pedTop = groundY + Math.max(18, H * 0.05) - pedH * (52 / 64);   // base sits down in the grass, not on its edge
+    const pedTop = H - pedH * (63 / 64) - (mobile ? 40 : Math.max(10, H * 0.02));   // island tip just above the bottom edge
     ped.style.top = pedTop + 'px';
-    const tip = pedTop + pedH * (6 / 64);
+    const tip = pedTop + pedH * (9 / 64);
     const orb = Math.round(Math.max(120, Math.min(mobile ? W * 0.42 : 230, H * 0.22)));
     document.documentElement.style.setProperty('--orb', orb + 'px');
     const gap = Math.max(26, orb * 0.2);
@@ -207,6 +213,7 @@ const GAMES = [
       o.style.pointerEvents = ad > vis ? 'none' : 'auto';
       o.classList.toggle('center', ad < 0.5);
       if (ad < 0.5) beam.style.translate = `0 ${bob}px`;
+      ped.style.translate = `0 ${bob * 0.55}px`;
       o.style.filter = ad < 0.5 ? 'none' : `brightness(${Math.max(0.55, 0.95 - ad * 0.15)})`;
     });
     const k = cur();
@@ -243,178 +250,88 @@ const GAMES = [
   requestAnimationFrame(frame);
 })();
 
-// ---------------------------------------------------------------- live wallpaper: deep cherry-blossom forest at night
+// ---------------------------------------------------------------- live sky: twinkling lights, falling lights, shooting stars
 (function () {
   const cv = document.getElementById('wall'), g = cv.getContext('2d');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const GROUND = 0.86;
-  let W, H, PX, layers = [], petals = [], flies = [], stars = [], moon, mx = 0.5;
-  const hash = (a, b) => { let h = a * 374761393 + b * 668265263; h = (h ^ (h >>> 13)) * 1274126177; return (h ^ (h >>> 16)) >>> 0; };
-  const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-  const hex = s => [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16));
-  function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  const COLORS = ['#7ff3e0', '#ffcf5a', '#ff9ec7', '#cfd8ff', '#ffffff', '#b9a4ff'];
+  let W, H, PX, lights = [], fallers = [], meteors = [], nextMeteor = 0, mx = 0.5, my = 0.5;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
 
-  function sky(c) {
-    const x = c.getContext('2d'), img = x.createImageData(c.width, c.height), d = img.data;
-    const st = [[0, '#05061a'], [0.3, '#0c1130'], [0.55, '#18214a'], [0.7, '#2a3766'], [0.8, '#33427a'], [1, '#0d1a1a']].map(s => [s[0], hex(s[1])]);
-    for (let y = 0; y < c.height; y++) {
-      const t = y / c.height; let k = 0; while (k < st.length - 2 && st[k + 1][0] < t) k++;
-      const a = st[k], b = st[k + 1], f = (t - a[0]) / (b[0] - a[0]);
-      for (let xx = 0; xx < c.width; xx++) {
-        const th = (BAY[(y & 3) * 4 + (xx & 3)] / 16 - 0.5) * 10, o = (y * c.width + xx) * 4;
-        let col = [0, 1, 2].map(i => a[1][i] + (b[1][i] - a[1][i]) * f);
-        const md = Math.hypot(xx - moon.x, y - moon.y);
-        if (md < moon.r * 4) { const h = Math.pow(1 - md / (moon.r * 4), 2) * 0.35; col = col.map((v, i) => v + ([190, 200, 255][i] - v) * h); }
-        if (md < moon.r) {
-          const sh = 1 - ((xx - moon.x) + (y - moon.y)) / (moon.r * 5);
-          col = [238, 234, 255].map(v => v * sh);
-          if (hash(xx >> 1, y >> 1) % 9 === 0) col = col.map(v => v * 0.9);
-        }
-        for (let i = 0; i < 3; i++) d[o + i] = Math.max(0, Math.min(255, Math.round((col[i] + th) / 6) * 6));
-        d[o + 3] = 255;
-      }
-    }
-    x.putImageData(img, 0, 0);
-  }
-  function blob(x, cx, cy, r, cols, seed) {
-    for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let xx = Math.floor(cx - r * 1.5); xx <= cx + r * 1.5; xx++) {
-      const dx = (xx - cx) / 1.5, dy = y - cy, d = Math.sqrt(dx * dx + dy * dy) + (hash(xx, y + seed) % 4) * 0.45;
-      if (d > r) continue;
-      let c = cols[1];
-      if (dy < -r * 0.3 && dx > -r * 0.2) c = cols[0];            // moonlight from the upper right
-      if (dy > r * 0.3 || (dx < -r * 0.5 && dy > -r * 0.1)) c = cols[2];
-      if (d > r - 1.4 && (xx + y) % 2) continue;
-      if (cols[3] && hash(xx, y + seed * 3) % 31 === 0) c = cols[3];
-      x.fillStyle = c; x.fillRect(xx, y, 1, 1);
-    }
-  }
-  function trunk(x, x0, w, y0, y1, cols, seed) {
-    for (let y = y0; y < y1; y++) {
-      const sway = Math.round(Math.sin(y / 31 + seed) * (w > 3 ? 1.5 : 0.6));
-      for (let i = 0; i < w; i++) {
-        let c = i >= w - 1 && w > 2 ? cols[0] : i === 0 && w > 3 ? cols[2] : cols[1];
-        if (w > 5 && hash(x0 + i, y + seed) % 11 === 0) c = cols[2];
-        x.fillStyle = c; x.fillRect(x0 + i + sway, y, 1, 1);
-      }
-    }
-  }
-  function fog(x, y0, y1, col, a) {
-    const steps = 6;
-    for (let k = 0; k < steps; k++) { x.globalAlpha = a / steps; x.fillStyle = col; x.fillRect(0, Math.round(y0 + (y1 - y0) * k / steps), x.canvas.width, H); }
-    x.globalAlpha = 1;
-  }
-  // far -> near: [trunk spacing, trunk width, canopy bottom, ground line, trunk colours, canopy colours, mist]
-  const DEPTH = [
-    [6, 1, 0.46, 0.73, ['#5866a0', '#46528a', '#3c4778'], ['#6d5f9c', '#5a4f8a', '#4a417a'], 0.22],
-    [10, 2, 0.40, 0.75, ['#4c5a92', '#38447a', '#2f3a6a'], ['#8a679f', '#735590', '#5b467c', '#b9a4d8'], 0.18],
-    [17, 3, 0.33, 0.77, ['#5c6aa8', '#2b355f', '#222a4e'], ['#b56fa6', '#965b92', '#6f4476', '#f1b7dc'], 0.14],
-    [28, 5, 0.25, 0.79, ['#6f7fc0', '#1d2445', '#161c38'], ['#d27fb6', '#ad5f97', '#7c4170', '#ffd0ea'], 0.08],
-  ];
   function build() {
     const r = cv.getBoundingClientRect();
     PX = r.width < 700 ? 2 : 3;
     W = Math.ceil(r.width / PX); H = Math.ceil(r.height / PX);
     cv.width = W; cv.height = H;
-    moon = { x: Math.round(W * (r.width < 700 ? 0.78 : 0.76)), y: Math.round(H * 0.17), r: Math.round(Math.min(W, H) * 0.07) };
-    const pad = 16, LW = W + pad * 2, mid = pad + W / 2;
-    const L0 = mk(W, H); sky(L0);
-    layers = [[L0, 0]];
-    DEPTH.forEach(([sp, tw, cb, gl, tc, cc, mist], li) => {
-      const L = mk(LW, H), x = L.getContext('2d');
-      const canopyBottom = Math.round(H * cb), groundLine = Math.round(H * gl);
-      for (let i = hash(li, 1) % sp; i < LW; i += sp + (hash(i, li) % Math.max(2, sp >> 1))) {
-        if (li >= 2 && Math.abs(i - mid) < W * (li === 3 ? 0.17 : 0.1)) continue;   // a clearing for the pillar
-        trunk(x, i, tw + (hash(i, 7) % 2), Math.round(canopyBottom * 0.4), groundLine, tc, i + li);
-      }
-      const step = Math.max(6, Math.round(sp * 1.1 + 4 + li * 3));
-      for (let i = -10; i < LW + 10; i += step) {
-        const rr = 5 + li * 3 + hash(i, li + 3) % (4 + li * 2);
-        const bx = i + hash(i, li + 4) % step - 16;
-        if (Math.hypot(bx - moon.x, canopyBottom - rr - moon.y) < moon.r * 2.4 + rr) continue;
-        blob(x, i + hash(i, li + 4) % step, canopyBottom - rr * 0.6 - hash(i, li + 5) % Math.round(H * 0.06 + li * 4), rr, cc, i + li * 99);
-        if (li < 3 && hash(i, li + 6) % 2) blob(x, i + step / 2, canopyBottom * 0.55 - hash(i, li + 8) % 12, rr * 0.9, cc, i + li * 77);
-      }
-      fog(x, groundLine - H * 0.12, groundLine + 4, '#8a9ad6', mist);        // mist pooled at the trunks' feet
-      layers.push([L, 1 + li * 2.5]);
+    const area = W * H;
+    // static lights in three depths: far = tiny and dim, near = brighter, a few with a soft cross
+    lights = Array.from({ length: Math.round(area / 900) }, () => {
+      const depth = Math.random() < 0.6 ? 0 : Math.random() < 0.75 ? 1 : 2;
+      return { x: Math.random() * W, y: Math.random() * H, d: depth, c: depth === 0 ? (Math.random() < 0.7 ? '#cfd8ff' : pick(COLORS)) : pick(COLORS),
+        p: Math.random() * 6.28, sp: rnd(0.4, 1.6), base: depth === 0 ? rnd(0.15, 0.4) : depth === 1 ? rnd(0.35, 0.7) : rnd(0.6, 0.95) };
     });
-    // ground + front silhouettes
-    const G = mk(LW, H), x = G.getContext('2d');
-    const ground = Math.round(H * GROUND);
-    for (let xx = 0; xx < LW; xx++) {
-      const top = ground + Math.round(Math.sin(xx / 23) * 1.5 + Math.sin(xx / 9));
-      for (let y = top; y < H; y++) {
-        let c = y < top + 2 ? '#3d6644' : y < top + 5 ? '#2c4a34' : y < top + 12 ? '#223c2b' : '#1a3123';
-        if (y === top && (xx % 3 === 0)) c = '#56875a';
-        if (hash(xx, y) % 41 === 0) c = ['#ffb3d1', '#e07bb0', '#ffd6ea'][hash(xx, y) % 3];
-        x.fillStyle = c; x.fillRect(xx, y, 1, 1);
-      }
-    }
-    fog(x, ground - 2, ground + 10, '#8a9ad6', 0.10);
-    const nearW = Math.max(14, Math.round(W * 0.045));
-    for (const side of [0, 1]) {
-      const x0 = side ? LW - nearW - 4 : 4;
-      trunk(x, x0, nearW, 0, H, ['#3c4a7a', '#0d1124', '#090c1a'], side * 9 + 3);
-      blob(x, side ? LW - 8 : 8, H * 0.05, Math.max(20, W * 0.09), ['#e48fc4', '#a8578f', '#6a325c', '#ffd6ea'], side + 3);
-      blob(x, side ? LW - 40 : 40, H * 0.13, Math.max(14, W * 0.06), ['#e48fc4', '#a8578f', '#6a325c', '#ffd6ea'], side + 5);
-    }
-    for (let i = 0; i < LW; i += 5) {
-      const bh = 3 + hash(i, 12) % 7;
-      for (let y = H - bh; y < H; y++) for (let k = 0; k < 6; k++) {
-        if (hash(i + k, y) % 5 === 0) continue;
-        x.fillStyle = y === H - bh ? '#1f3a26' : '#132619'; x.fillRect(i + k, y, 1, 1);
-      }
-    }
-    layers.push([G, 12]);
-    const n = Math.round(W * H / (PX === 2 ? 900 : 700));
-    petals = Array.from({ length: n }, () => newPetal(true));
-    flies = Array.from({ length: Math.round(W / 14) }, () => ({ x: Math.random() * W, y: H * (0.45 + Math.random() * 0.45), p: Math.random() * 6.28, s: 0.5 + Math.random() }));
-    stars = Array.from({ length: Math.round(W * H / 500) }, () => ({ x: Math.random() * W, y: Math.random() * H * 0.45, p: Math.random() * 6.28 }));
+    fallers = Array.from({ length: Math.max(10, Math.round(area / 9000)) }, () => newFaller(true));
+    meteors = [];
   }
-  function newPetal(anywhere) {
-    return { x: Math.random() * (W + 60) - 30, y: anywhere ? Math.random() * H : -4 - Math.random() * 30,
-      vy: 5 + Math.random() * 8, vx: 2 + Math.random() * 5, p: Math.random() * 6.28, s: Math.random(), glow: Math.random() < 0.18,
-      c: ['#ffb3d1', '#ff8fbf', '#ffd6ea', '#e889bd'][Math.floor(Math.random() * 4)] };
+  function newFaller(anywhere) {
+    const slow = Math.random();
+    return { x: Math.random() * W, y: anywhere ? Math.random() * H : rnd(-20, -2), vy: 2 + slow * slow * 16, vx: rnd(-1.2, 1.2),
+      c: pick(['#ffcf5a', '#ff9ec7', '#7ff3e0', '#b9a4ff', '#fff4c9']), life: 0, max: rnd(6, 16), p: Math.random() * 6.28 };
   }
-  let lastT = performance.now();
+  function newMeteor() {
+    const fromLeft = Math.random() < 0.5, ang = rnd(0.32, 0.6);
+    const speed = rnd(150, 260);
+    return { x: fromLeft ? rnd(-20, W * 0.5) : rnd(W * 0.5, W + 20), y: rnd(-10, H * 0.35),
+      vx: (fromLeft ? 1 : -1) * Math.cos(ang) * speed, vy: Math.sin(ang) * speed, life: 0, max: rnd(0.7, 1.3),
+      len: Math.round(rnd(14, 30)), c: Math.random() < 0.7 ? [255, 244, 220] : pick([[127, 243, 224], [255, 158, 199], [255, 207, 90]]) };
+  }
+  let last = performance.now();
   function frame(t) {
-    const dt = Math.min(0.05, (t - lastT) / 1000); lastT = t;
-    g.drawImage(layers[0][0], 0, 0);
-    for (const s of stars) {                              // stars peek through the gaps in the canopy
-      const b = (Math.sin(t / 900 + s.p) + 1) / 2; if (b < 0.3) continue;
-      g.fillStyle = `rgba(230,236,255,${b * 0.9})`; g.fillRect(Math.round(s.x), Math.round(s.y), 1, 1);
+    const dt = Math.min(0.05, (t - last) / 1000); last = t;
+    g.clearRect(0, 0, W, H);
+    const ox = (mx - 0.5), oy = (my - 0.5);
+    // static, twinkling
+    for (const L of lights) {
+      const tw = reduce ? 1 : 0.55 + 0.45 * Math.sin(t / 1000 * L.sp + L.p);
+      const a = L.base * tw;
+      const X = Math.round(L.x - ox * (L.d + 1) * 3), Y = Math.round(L.y - oy * (L.d + 1) * 2);
+      g.globalAlpha = a; g.fillStyle = L.c; g.fillRect(X, Y, 1, 1);
+      if (L.d === 2 && tw > 0.85) { g.globalAlpha = a * 0.35; g.fillRect(X - 1, Y, 3, 1); g.fillRect(X, Y - 1, 1, 3); }
     }
-    for (let i = 1; i < layers.length; i++) {
-      const [L, par] = layers[i];
-      g.drawImage(L, Math.round((mx - 0.5) * -par) - 16, 0);
-      if (i === 2 || i === 4) {                             // moonbeams between depth layers
-        for (let k = 0; k < 4; k++) {
-          const a = 0.035 + 0.02 * Math.sin(t / 1700 + k * 2 + i);
-          g.fillStyle = `rgba(190,205,255,${reduce ? 0.04 : a})`;
-          const x0 = moon.x - 10 + k * 14 - i * 6, w = 4 + (k % 2) * 3;
-          g.beginPath(); g.moveTo(x0, moon.y); g.lineTo(x0 + w, moon.y);
-          g.lineTo(x0 - H * 0.42 + w * 3, H * GROUND); g.lineTo(x0 - H * 0.42, H * GROUND); g.closePath(); g.fill();
-        }
+    // falling lights with short tails
+    for (const f of fallers) {
+      if (!reduce) { f.y += f.vy * dt; f.x += (f.vx + Math.sin(t / 1400 + f.p) * 0.8) * dt; f.life += dt; }
+      if (f.y > H + 4) Object.assign(f, newFaller(false));
+      const fade = Math.min(1, f.life / 1.2);
+      const X = Math.round(f.x), Y = Math.round(f.y);
+      g.fillStyle = f.c;
+      g.globalAlpha = 0.9 * fade; g.fillRect(X, Y, 1, 1);
+      const tail = Math.min(4, Math.round(f.vy / 5));
+      for (let k = 1; k <= tail; k++) { g.globalAlpha = 0.9 * fade * (1 - k / (tail + 1)) * 0.6; g.fillRect(X, Y - k, 1, 1); }
+    }
+    // shooting stars: rare, fast, fading trail
+    if (!reduce && t > nextMeteor) { meteors.push(newMeteor()); nextMeteor = t + rnd(2600, 6500); }
+    meteors = meteors.filter(m => m.life < m.max);
+    for (const m of meteors) {
+      m.life += dt; m.x += m.vx * dt; m.y += m.vy * dt;
+      const k = m.life / m.max, a = k < 0.15 ? k / 0.15 : 1 - (k - 0.15) / 0.85;
+      const n = Math.hypot(m.vx, m.vy), ux = m.vx / n, uy = m.vy / n;
+      for (let i = 0; i < m.len; i++) {
+        const fall = 1 - i / m.len;
+        g.globalAlpha = a * fall * fall;
+        g.fillStyle = i < 2 ? '#ffffff' : `rgb(${m.c[0]},${m.c[1]},${m.c[2]})`;
+        g.fillRect(Math.round(m.x - ux * i), Math.round(m.y - uy * i), 1, 1);
       }
+      g.globalAlpha = a * 0.4; g.fillStyle = '#ffffff';
+      g.fillRect(Math.round(m.x) - 1, Math.round(m.y), 3, 1); g.fillRect(Math.round(m.x), Math.round(m.y) - 1, 1, 3);
     }
-    for (const f of flies) {                              // fireflies
-      const b = (Math.sin(t / 600 * f.s + f.p) + 1) / 2; if (b < 0.25) continue;
-      const X = Math.round(f.x + Math.sin(t / 2300 + f.p) * 10), Y = Math.round(f.y + Math.cos(t / 1900 + f.p * 2) * 6);
-      g.fillStyle = `rgba(255,220,120,${b * 0.25})`; g.fillRect(X - 1, Y, 3, 1); g.fillRect(X, Y - 1, 1, 3);
-      g.fillStyle = `rgba(255,236,160,${b})`; g.fillRect(X, Y, 1, 1);
-    }
-    for (const p of petals) {
-      if (!reduce) { p.y += p.vy * dt; p.x += (p.vx + Math.sin(t / 900 + p.p) * 7) * dt; }
-      if (p.y > H + 2 || p.x > W + 30) Object.assign(p, newPetal(false));
-      const X = Math.round(p.x), Y = Math.round(p.y), flip = Math.sin(t / 260 + p.p * 3) > 0;
-      if (p.glow) { g.fillStyle = 'rgba(255,190,225,.25)'; g.fillRect(X - 1, Y - 1, 3, 3); }
-      g.fillStyle = p.c;
-      if (p.s > 0.55) g.fillRect(X, Y, flip ? 2 : 1, flip ? 1 : 2); else g.fillRect(X, Y, 1, 1);
-    }
+    g.globalAlpha = 1;
     if (!reduce || !frame.once) { frame.once = true; requestAnimationFrame(frame); }
   }
-  addEventListener('pointermove', e => { if (e.pointerType === 'mouse') mx = e.clientX / innerWidth; });
+  addEventListener('pointermove', e => { if (e.pointerType === 'mouse') { mx = e.clientX / innerWidth; my = e.clientY / innerHeight; } });
   let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { build(); if (reduce) requestAnimationFrame(frame); }, 150); });
-  build(); requestAnimationFrame(frame);
+  build(); nextMeteor = performance.now() + 900; requestAnimationFrame(frame);
 })();
 </script>
 </body>
